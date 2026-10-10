@@ -109,6 +109,8 @@ module "stack" {
   source_hash           = local.source_hash
   attacker_count        = var.attacker_count
   instance_profile_name = aws_iam_instance_profile.ec2.name
+  domain                = var.domain
+  certificate_arn       = aws_acm_certificate_validation.dashboard.certificate_arn
 
   depends_on = [aws_ecr_repository.app]
 }

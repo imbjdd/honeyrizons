@@ -8,7 +8,15 @@ output "instance_id" {
 }
 
 output "dashboard_url" {
-  value = "https://${aws_cloudfront_distribution.dashboard.domain_name}"
+  value = var.domain != "" ? "https://${var.domain}" : "https://${aws_cloudfront_distribution.dashboard.domain_name}"
+}
+
+output "cloudfront_domain" {
+  value = aws_cloudfront_distribution.dashboard.domain_name
+}
+
+output "cloudfront_hosted_zone_id" {
+  value = aws_cloudfront_distribution.dashboard.hosted_zone_id
 }
 
 output "shell" {

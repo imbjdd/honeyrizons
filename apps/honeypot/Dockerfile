@@ -12,6 +12,8 @@ RUN adduser -D -H -u 10001 honeypot && mkdir -p /app/logs && chown honeypot /app
 WORKDIR /app/apps/honeypot
 COPY --from=build /beelzebub /usr/local/bin/beelzebub
 COPY config/ config/
+COPY scripts/supervise.sh /usr/local/bin/supervise
 USER honeypot
-EXPOSE 2222 2323 8080 3306 6379 2112
-ENTRYPOINT ["beelzebub", "run", "-c", "config/beelzebub.yaml", "-s", "config/services/"]
+# Core services, then the lures the city planner may open (served by the annex).
+EXPOSE 2222 2323 8080 3306 6379 8000 2112 11434 2375 8081 5432 8001 1883
+ENTRYPOINT ["supervise"]

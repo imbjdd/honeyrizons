@@ -54,14 +54,6 @@
   box-shadow: inset 0 0 0 2px color-mix(in oklab, var(--accent) 70%, transparent);
 }
 
-.obsidian-analytics-dashboard .filter-noir {
-  filter: grayscale(1) contrast(1.07);
-}
-
-.obsidian-analytics-dashboard .filter-warm {
-  filter: sepia(0.23) saturate(0.85);
-}
-
 .obsidian-analytics-dashboard .city-status {
   position: absolute;
   inset: 0;
@@ -83,8 +75,6 @@
 /* Floating surfaces share the dashboard window's glass. */
 .obsidian-analytics-dashboard .city-panel,
 .obsidian-analytics-dashboard .city-tools,
-.obsidian-analytics-dashboard .city-popover,
-.obsidian-analytics-dashboard .city-photo-bar,
 .obsidian-analytics-dashboard .city-toast,
 .obsidian-analytics-dashboard .city-tooltip {
   border-radius: 12px;
@@ -168,11 +158,15 @@
 }
 
 /* The interface waits for the shot to finish, then fades in. */
-.obsidian-analytics-dashboard .city-stage > :is(.city-toolbar, .city-labels, .city-feed) {
+.obsidian-analytics-dashboard .city-stage > :is(.city-toolbar,
+.city-labels,
+.city-planner) {
   transition: opacity 300ms ease;
 }
 
-.obsidian-analytics-dashboard .city-stage.is-intro > :is(.city-toolbar, .city-labels, .city-feed) {
+.obsidian-analytics-dashboard .city-stage.is-intro > :is(.city-toolbar,
+.city-labels,
+.city-planner) {
   opacity: 0;
   pointer-events: none;
 }
@@ -204,78 +198,6 @@
 
 .obsidian-analytics-dashboard .city-tool:disabled {
   opacity: 0.35;
-}
-
-.obsidian-analytics-dashboard .city-tools-sep {
-  width: 1px;
-  height: 16px;
-  margin: 0 4px;
-  background: rgba(255, 255, 255, 0.08);
-}
-
-.obsidian-analytics-dashboard .city-popover {
-  width: 280px;
-  max-height: 420px;
-  overflow-y: auto;
-  padding: 12px;
-  scrollbar-width: thin;
-}
-
-.obsidian-analytics-dashboard .city-popover .ai-label {
-  margin: 0 0 8px;
-}
-
-.obsidian-analytics-dashboard .city-building-list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-}
-
-.obsidian-analytics-dashboard .city-building-list button {
-  display: grid;
-  grid-template-columns: 8px minmax(0, 1fr) auto;
-  align-items: center;
-  gap: 10px;
-  width: 100%;
-  padding: 7px 8px;
-  border-radius: 8px;
-  color: var(--text);
-  font-size: 13px;
-  text-align: left;
-}
-
-.obsidian-analytics-dashboard .city-building-list button:hover {
-  background: var(--fill-1);
-}
-
-.obsidian-analytics-dashboard .city-building-list i {
-  width: 8px;
-  height: 8px;
-  border-radius: 2px;
-}
-
-.obsidian-analytics-dashboard .city-building-list small {
-  color: var(--text-3);
-  font-size: 12px;
-}
-
-.obsidian-analytics-dashboard .city-shortcuts {
-  display: grid;
-  gap: 6px;
-  margin: 0;
-}
-
-.obsidian-analytics-dashboard .city-shortcuts div {
-  display: grid;
-  grid-template-columns: 86px minmax(0, 1fr);
-  align-items: center;
-  gap: 10px;
-  font-size: 12.5px;
-}
-
-.obsidian-analytics-dashboard .city-shortcuts dd {
-  margin: 0;
-  color: var(--text-2);
 }
 
 .obsidian-analytics-dashboard .city-page kbd {
@@ -424,26 +346,6 @@
   margin: -4px -6px 0 0;
 }
 
-.obsidian-analytics-dashboard .city-service-stats {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 8px;
-  margin: 14px 0 0;
-}
-
-.obsidian-analytics-dashboard .city-service-stats dt {
-  color: var(--text-3);
-  font-size: 11.5px;
-}
-
-.obsidian-analytics-dashboard .city-service-stats dd {
-  margin: 2px 0 0;
-  color: var(--text);
-  font-size: 15px;
-  font-weight: 600;
-  font-variant-numeric: tabular-nums;
-}
-
 .obsidian-analytics-dashboard .city-service-threat {
   display: flex;
   align-items: flex-start;
@@ -460,81 +362,7 @@
   line-height: 1.4;
 }
 
-.obsidian-analytics-dashboard .city-service-enter {
-  margin-top: 10px;
-}
-
-/* ───────── Live feed (bottom left) ───────── */
-
-.obsidian-analytics-dashboard .city-feed {
-  left: 12px;
-  /* Clears the timeline along the bottom edge. */
-  bottom: 92px;
-  width: 360px;
-  padding: 8px 6px 4px;
-}
-
-.obsidian-analytics-dashboard .city-feed-title {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  margin: 0 6px 4px;
-}
-
-.obsidian-analytics-dashboard .city-feed ol {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-}
-
-.obsidian-analytics-dashboard .city-feed-row {
-  display: grid;
-  grid-template-columns: 16px minmax(0, 1fr) auto 34px;
-  align-items: center;
-  gap: 8px;
-  width: 100%;
-  padding: 5px 6px;
-  border-radius: 8px;
-  color: var(--text);
-  font-size: 12.5px;
-  text-align: left;
-  transition: background-color var(--duration-quick) ease;
-}
-
-.obsidian-analytics-dashboard .city-feed-row:hover,
-.obsidian-analytics-dashboard .city-feed-row[aria-pressed="true"] {
-  background: var(--fill-1);
-}
-
-.obsidian-analytics-dashboard .city-feed-row .status-dot {
-  display: inline-flex;
-}
-
-.obsidian-analytics-dashboard .city-feed-title-text {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.obsidian-analytics-dashboard .city-feed-row time {
-  color: var(--text-3);
-  font-size: 11.5px;
-  text-align: right;
-}
-
-/* ───────── Photo mode and notices ───────── */
-
-.obsidian-analytics-dashboard .city-photo-bar {
-  position: absolute;
-  z-index: 3;
-  left: 50%;
-  bottom: 14px;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 6px;
-  transform: translateX(-50%);
-}
+/* ───────── Notices ───────── */
 
 .obsidian-analytics-dashboard .city-toast {
   position: absolute;
@@ -1013,16 +841,10 @@
   color: var(--accent);
 }
 
-/* ───────── Photo mode and narrow layouts ───────── */
-
-.obsidian-analytics-dashboard .city-stage.is-photo .city-canvas {
-  cursor: default;
-}
+/* ───────── Narrow layouts ───────── */
 
 @container page (max-width: 760px) {
-  .obsidian-analytics-dashboard .city-feed {
-    display: none;
-  }
+  
 
   .obsidian-analytics-dashboard .city-service {
     width: calc(100% - 24px);
@@ -1037,142 +859,146 @@
   }
 }
 
+/* ───────── City planner (right) ───────── */
 
-/* ───────── Timeline: scrub through the city's chronicle ───────── */
-
-.obsidian-analytics-dashboard .city-timeline {
-  left: 12px;
+.obsidian-analytics-dashboard .city-planner {
+  top: 60px;
   right: 12px;
-  bottom: 12px;
-  padding: 9px 14px 7px;
+  width: 300px;
+  padding: 10px 8px 6px;
 }
 
-.obsidian-analytics-dashboard .city-timeline.is-rewound {
-  box-shadow:
-    0 0 0 1px color-mix(in oklab, var(--accent) 45%, transparent),
-    0 12px 32px rgba(0, 0, 0, 0.35);
-}
-
-.obsidian-analytics-dashboard .city-timeline-head {
+.obsidian-analytics-dashboard .city-planner-head {
   display: flex;
-  align-items: center;
-  gap: 8px;
-  margin-bottom: 7px;
-}
-
-.obsidian-analytics-dashboard .city-timeline-when {
-  display: inline-flex;
-  align-items: center;
-  gap: 7px;
-  margin: 0 4px 0 2px;
-  color: var(--text);
-  font-size: 12.5px;
+  justify-content: space-between;
+  align-items: baseline;
+  margin: 0 6px 6px;
+  color: var(--text-3);
+  font-size: 11.5px;
   font-variant-numeric: tabular-nums;
-  white-space: nowrap;
 }
 
-.obsidian-analytics-dashboard .city-timeline-when svg {
-  color: var(--accent);
+.obsidian-analytics-dashboard .city-planner-head .ai-label {
+  color: #ffcf4a;
 }
 
-.obsidian-analytics-dashboard .city-timeline-event {
+.obsidian-analytics-dashboard .city-planner ol {
+  display: grid;
+  gap: 2px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.obsidian-analytics-dashboard .city-planner-row {
   display: flex;
   align-items: center;
   gap: 8px;
+}
+
+.obsidian-analytics-dashboard .city-planner-text {
+  display: grid;
   flex: 1;
   min-width: 0;
-  margin: 0;
+  padding: 5px 6px;
+  border-radius: 8px;
+  color: var(--text);
+  font-size: 12.5px;
+  text-align: left;
+}
+
+.obsidian-analytics-dashboard .city-planner-text:hover {
+  background: var(--fill-1);
+}
+
+.obsidian-analytics-dashboard .city-planner-text span {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+
+.obsidian-analytics-dashboard .city-planner-text small {
+  color: var(--text-3);
+  font-size: 11.5px;
+  line-height: 1.35;
+}
+
+.obsidian-analytics-dashboard .city-planner-row[data-status] .city-planner-text small {
+  padding-left: 14px;
+}
+
+.obsidian-analytics-dashboard .city-planner-text i {
+  width: 7px;
+  height: 7px;
+  border-radius: 1px;
+  background: #46c37b;
+  transform: rotate(45deg);
+}
+
+.obsidian-analytics-dashboard .city-planner-row[data-status="planned"] i {
+  background: #ff9f1c;
+  animation: city-blink 1s steps(2, jump-none) infinite;
+}
+
+.obsidian-analytics-dashboard .city-planner-apply {
+  flex: none;
+  height: 26px;
+  padding: 0 11px;
+  font-size: 12px;
+}
+
+@keyframes city-blink {
+  50% {
+    opacity: 0.2;
+  }
+}
+
+/* Labels: a lure carries a diamond instead of a dot; a building site blinks. */
+.obsidian-analytics-dashboard .city-label[data-lure] i,
+.obsidian-analytics-dashboard .city-label[data-status="building"] i {
+  border-radius: 1px;
+  transform: rotate(45deg);
+}
+
+.obsidian-analytics-dashboard .city-label[data-status="building"] {
+  box-shadow:
+    0 0 0 1px color-mix(in oklab, var(--glow) 60%, transparent),
+    0 6px 18px rgba(0, 0, 0, 0.35);
+}
+
+.obsidian-analytics-dashboard .city-label[data-status="building"] i {
+  animation: city-blink 1s steps(2, jump-none) infinite;
+}
+
+.obsidian-analytics-dashboard .city-service-line {
+  margin: 10px 0 0;
   color: var(--text-2);
   font-size: 12.5px;
 }
 
-.obsidian-analytics-dashboard .city-timeline-event span {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+.obsidian-analytics-dashboard .city-service-lure {
+  margin: 10px 0 0;
+  padding-top: 10px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+  color: var(--text-2);
+  font-size: 12.5px;
+  line-height: 1.45;
 }
 
-.obsidian-analytics-dashboard .city-timeline-live {
-  flex: none;
-  height: 26px;
-  padding: 0 10px;
-  font-size: 12px;
+.obsidian-analytics-dashboard .city-service-lure b {
+  color: #ffcf4a;
+  font-weight: 600;
 }
 
-.obsidian-analytics-dashboard .city-timeline-track {
-  position: relative;
-  height: 20px;
-  cursor: pointer;
-  touch-action: none;
-}
-
-.obsidian-analytics-dashboard .city-timeline-track::before {
-  content: "";
-  position: absolute;
-  inset: 9px 0 auto;
-  height: 3px;
-  border-radius: 2px;
-  background: rgba(255, 255, 255, 0.08);
-}
-
-.obsidian-analytics-dashboard .city-timeline-track:focus-visible {
-  outline: none;
-}
-
-.obsidian-analytics-dashboard .city-timeline-track:focus-visible::before {
-  box-shadow: 0 0 0 2px color-mix(in oklab, var(--accent) 70%, transparent);
-}
-
-.obsidian-analytics-dashboard .city-timeline-fill {
-  position: absolute;
-  top: 9px;
-  left: 0;
-  height: 3px;
-  border-radius: 2px;
-  background: color-mix(in oklab, var(--accent) 55%, transparent);
-}
-
-.obsidian-analytics-dashboard .city-timeline-mark {
-  position: absolute;
-  top: 6px;
-  width: 3px;
-  height: 9px;
-  margin-left: -1.5px;
-  border-radius: 2px;
-  background: var(--c);
-  opacity: 0.65;
-  pointer-events: none;
-}
-
-.obsidian-analytics-dashboard .city-timeline-mark[data-strong="true"] {
-  top: 3px;
-  width: 4px;
-  height: 15px;
-  margin-left: -2px;
-  opacity: 1;
-}
-
-.obsidian-analytics-dashboard .city-timeline-handle {
-  position: absolute;
-  top: 2px;
-  width: 4px;
-  height: 17px;
-  margin-left: -2px;
-  border-radius: 3px;
-  background: var(--text);
-  box-shadow: 0 0 0 3px rgba(18, 18, 19, 0.75);
-  pointer-events: none;
-}
-
-.obsidian-analytics-dashboard .city-timeline-scale {
-  display: flex;
-  justify-content: space-between;
-  color: var(--text-3);
-  font-size: 10.5px;
+@media (prefers-reduced-motion: reduce) {
+  .obsidian-analytics-dashboard .city-planner-row[data-status="planned"] i,
+  .obsidian-analytics-dashboard .city-label[data-status="building"] i {
+    animation: none;
+  }
 }
 
 @container page (max-width: 760px) {
-  .obsidian-analytics-dashboard .city-timeline-event {
+  .obsidian-analytics-dashboard .city-planner {
     display: none;
   }
 }

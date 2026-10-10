@@ -5,6 +5,8 @@ services:
     image: ${REGISTRY:-localhost}/honeyrizons-honeypot:${IMAGE_TAG:-latest}
     build: ./apps/honeypot
     restart: unless-stopped
+    # The supervisor runs two Beelzebubs; tini forwards SIGTERM so both stop cleanly.
+    init: true
     ports:
       # Host port (what attackers hit) : container port. Set HONEYPOT_SSH_PORT=22 once the
       # host's real sshd is off port 22 (e.g. admin via AWS SSM).
@@ -14,10 +16,20 @@ services:
       - "3306:3306"
       - "6379:6379"
       - "8000:8000"
-      # Prometheus metrics, local only.
+      # Lures the city planner may open. Nothing listens on them until it does.
+      - "11434:11434"
+      - "2375:2375"
+      - "8081:8081"
+      - "5432:5432"
+      - "8001:8001"
+      - "1883:1883"
+      # Prometheus metrics, local only (core, then annex).
       - "127.0.0.1:2112:2112"
+      - "127.0.0.1:2113:2113"
     volumes:
       - logs:/app/logs
+      # Written by the dashboard's city planner, served by the annex.
+      - annex:/app/apps/honeypot/config/annex:ro
 
   dashboard:
     image: ${REGISTRY:-localhost}/honeyrizons-dashboard:${IMAGE_TAG:-latest}
@@ -32,6 +44,9 @@ services:
       # "lat,lon" of the honeypot on the attack map.
       HONEYPOT_LOCATION: ${HONEYPOT_LOCATION:-48.8566,2.3522}
       INTEL_PATH: /app/data/intel.json
+      ANNEX_DIR: /app/annex
+      # "off" keeps the attack surface fixed.
+      CITY_PLANNER: ${CITY_PLANNER:-on}
       # Empty = local triage rules only. On AWS it comes from SSM /honeyrizons/openai_api_key.
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
     # Localhost by default; on AWS DASHBOARD_BIND=0.0.0.0 and the security group only lets CloudFront in.
@@ -40,7 +55,9 @@ services:
     volumes:
       - logs:/app/logs:ro
       - intel:/app/data
+      - annex:/app/annex
 
 volumes:
   logs:
   intel:
+  annex:

@@ -3,6 +3,7 @@
 //
 // Every event is a fact about traffic that already happened. The city's shape at any instant is the fold of them.
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
+import { approve, close, plan, reconcileAnnex, suggestions, wantedLures, type PlannerFacts, type PlannerMode } from "./planner";
 import {
   buildSessions,
   foldChronicle,
@@ -45,9 +46,11 @@ type Options = {
   intel: () => IntelSnapshot;
   publish: (events: ChronicleEvent[]) => void;
   storePath: string;
+  /** The city planner, off when absent: where lure configs come from and where the honeypot's annex reads them. */
+  planner?: { mode: Exclude<PlannerMode, "off">; blueprints: string; annex: string };
 };
 
-export function startChronicle({ events, services, intel, publish, storePath }: Options) {
+export function startChronicle({ events, services, intel, publish, storePath, planner }: Options) {
   const loaded: Store | null = existsSync(storePath) ? JSON.parse(readFileSync(storePath, "utf8")) : null;
   const store: Store = loaded?.version === STORE_VERSION ? loaded : { version: STORE_VERSION, events: [] };
   let seq = store.events.length;
@@ -64,20 +67,57 @@ export function startChronicle({ events, services, intel, publish, storePath }: 
     }
   };
 
-  function tick() {
+  const facts = () => {
     const now = Date.now();
-    const state = foldChronicle(store.events);
-    const fresh = derive(state, { now, sessions: buildSessions(events(), now), services: services(), intel: intel() }, () => `e${++seq}`);
-    if (fresh.length === 0) return;
-    store.events.push(...fresh);
-    save();
-    publish(fresh);
+    return { now, sessions: buildSessions(events(), now), services: services(), intel: intel() };
+  };
+
+  function tick() {
+    const current = facts();
+    const fresh = derive(foldChronicle(store.events), current, () => `e${++seq}`);
+    // The planner decides on the city as it stands after this tick's facts, so a lure that just opened counts as open.
+    if (planner) fresh.push(...planLures(foldChronicle([...store.events, ...fresh]), current, () => `e${++seq}`, planner.mode));
+    commit(fresh);
+  }
+
+  function commit(fresh: ChronicleEvent[]) {
+    if (fresh.length) {
+      store.events.push(...fresh);
+      save();
+      publish(fresh);
+    }
+    if (planner) {
+      try {
+        if (reconcileAnnex(wantedLures(foldChronicle(store.events)), planner)) console.log("[planner] annex updated");
+      } catch (err) {
+        console.error("[planner] could not update the annex:", err);
+      }
+    }
   }
 
   setTimeout(tick, 4_000);
   setInterval(tick, TICK_MS);
   return {
     snapshot: () => ({ events: store.events, since: store.events[0]?.at ?? Date.now() }),
+    /** What the planner would build now, with the traffic that asks for it. */
+    suggestions: () => suggestions(foldChronicle(store.events), plannerFacts(facts())),
+    /** An operator applies a suggestion: it is planned, and the annex is updated right away. */
+    apply(lure: string): { ok: true } | { error: string } {
+      if (!planner) return { error: "The city planner is off" };
+      const current = facts();
+      const draft = approve(foldChronicle(store.events), plannerFacts(current), lure);
+      if ("error" in draft) return draft;
+      commit([{ id: `e${++seq}`, at: current.now, ...draft } as ChronicleEvent]);
+      return { ok: true };
+    },
+    /** An operator closes a lure: it is retired, and the annex drops it right away. */
+    close(lure: string): { ok: true } | { error: string } {
+      if (!planner) return { error: "The city planner is off" };
+      const draft = close(foldChronicle(store.events), lure);
+      if ("error" in draft) return draft;
+      commit([{ id: `e${++seq}`, at: Date.now(), ...draft } as ChronicleEvent]);
+      return { ok: true };
+    },
   };
 }
 
@@ -118,7 +158,12 @@ export function derive(state: ChronicleState, { now, sessions, services, intel }
     foundedAt = Math.min(oldest - 1000, now);
     add({ type: "genesis", services: exposed, at: foundedAt });
   } else {
-    for (const s of exposed) if (!state.services[s.key]) add({ type: "service.exposed", ...s });
+    for (const s of exposed) {
+      if (state.services[s.key] && !state.services[s.key].withdrawnAt) continue;
+      // A service the planner asked for is a lure; the fold opens the lure when it lands.
+      const lure = Object.values(state.lures).find((l) => l.key === s.key && l.status === "planned")?.lure;
+      add({ type: "service.exposed", ...s, ...(lure ? { lure } : {}) });
+    }
     for (const s of Object.values(state.services)) {
       if (!s.withdrawnAt && !exposed.some((e) => e.key === s.key)) add({ type: "service.withdrawn", key: s.key, name: s.name });
     }
@@ -129,6 +174,11 @@ export function derive(state: ChronicleState, { now, sessions, services, intel }
   const stats = new Map<string, Stat>();
   for (const s of sessions) {
     const key = serviceKey(s.protocol, s.service);
+    // Nothing listens on a lure before it is planned, so earlier traffic on it belongs to a previous opening. (Not
+    // before it is exposed: the honeypot serves it a few seconds before the next tick notices.)
+    const lure = state.services[key]?.lure;
+    const plannedAt = lure ? state.lures[lure]?.plannedAt : undefined;
+    if (plannedAt !== undefined && s.end < plannedAt) continue;
     const stat = stats.get(key) ?? { sessions: 0, lastEnd: 0, firstEnd: s.end, recent: 0 };
     stat.sessions++;
     stat.lastEnd = Math.max(stat.lastEnd, s.end);
@@ -210,6 +260,19 @@ export function derive(state: ChronicleState, { now, sessions, services, intel }
   }
 
   return out;
+}
+
+function plannerFacts({ now, sessions, intel }: Facts): PlannerFacts {
+  const analysisOf = (s: Facts["sessions"][number]) => {
+    const fp = intel.sessions[s.key]?.fingerprint;
+    return fp ? intel.analyses[fp] : undefined;
+  };
+  return { now, sessions, analysisOf };
+}
+
+/** The planner's decisions, as chronicle events stamped with the tick's time. */
+export function planLures(state: ChronicleState, facts: Facts, nextId: () => string, mode: PlannerMode = "auto"): ChronicleEvent[] {
+  return plan(state, plannerFacts(facts), mode).map((d) => ({ id: nextId(), at: facts.now, ...d }) as ChronicleEvent);
 }
 
 function nextStatus(current: ServiceStatus, recent: number, idleFor: number): ServiceStatus {

@@ -3,14 +3,15 @@
   "private": true,
   "scripts": {
     "build": "cd beelzebub && go build -o ../bin/beelzebub .",
-    "dev": "mkdir -p ../../logs && ./bin/beelzebub run -c config/beelzebub.yaml -s config/services/",
-    "start": "mkdir -p ../../logs && ./bin/beelzebub run -c config/beelzebub.yaml -s config/services/",
-    "validate": "./bin/beelzebub validate -c config/beelzebub.yaml -s config/services/",
+    "dev": "mkdir -p ../../logs && BEELZEBUB=./bin/beelzebub ./scripts/supervise.sh",
+    "start": "mkdir -p ../../logs && BEELZEBUB=./bin/beelzebub ./scripts/supervise.sh",
+    "validate": "./bin/beelzebub validate -c config/beelzebub.yaml -s config/services/ && ./bin/beelzebub validate -c config/annex.yaml -s config/lures/",
     "attack": "./scripts/attack.sh",
     "seed": "bun scripts/seed-demo.ts",
     "attack:agent": "bun scripts/agent-attack.ts",
     "typecheck": "tsc",
-    "attack:claude": "bun scripts/claude-agent.ts"
+    "attack:claude": "bun scripts/claude-agent.ts",
+    "attack:lures": "./scripts/attack-lures.sh"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.133.0"

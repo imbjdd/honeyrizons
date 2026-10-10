@@ -43,10 +43,12 @@ function useHoneypot() {
     let source: EventSource | undefined;
     let cancelled = false;
 
-    fetch("/api/services")
-      .then((r) => r.json())
-      .then((s: HoneypotService[]) => !cancelled && setServices(s))
-      .catch(() => {});
+    const loadServices = () =>
+      fetch("/api/services")
+        .then((r) => r.json())
+        .then((s: HoneypotService[]) => !cancelled && setServices(s))
+        .catch(() => {});
+    void loadServices();
     fetch("/api/health")
       .then((r) => r.json())
       .then((h: { logPath: string; location?: { lat: number; lon: number } }) => {
@@ -82,6 +84,8 @@ function useHoneypot() {
         source.addEventListener("chronicle", (msg) => {
           const fresh = JSON.parse((msg as MessageEvent<string>).data) as ChronicleEvent[];
           setChronicle((prev) => mergeChronicle(prev, fresh));
+          // The city planner opens and closes lures at runtime, so the attack surface is not fixed after load.
+          if (fresh.some((e) => e.type === "service.exposed" || e.type === "service.withdrawn")) void loadServices();
         });
         source.addEventListener("intel", (msg) => {
           const patch = JSON.parse((msg as MessageEvent<string>).data) as IntelPatch;

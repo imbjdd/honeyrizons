@@ -109,6 +109,8 @@ export function sessionTitle(s: AnalyticsSession) {
   if (s.status.label === "Brute force") return `${s.creds.length} login attempt${s.creds.length > 1 ? "s" : ""} on ${s.service}`;
   if (n === 0) return `${s.protocol} login${user ? ` as ${user}` : ""}, no commands`;
   const first = s.interactions[0].input;
+  // Binary protocols (PostgreSQL, MQTT) read as escape soup; name the service instead.
+  if ((first.match(/\\x[0-9a-f]{2}/g)?.length ?? 0) >= 3) return `${n} message${n > 1 ? "s" : ""} to ${s.service}`;
   return `${user ? `${user}@` : ""}${s.protocol.toLowerCase()} · ${first}${n > 1 ? ` +${n - 1}` : ""}`;
 }
 

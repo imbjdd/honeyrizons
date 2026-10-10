@@ -1,0 +1,53 @@
+apiVersion: "v1"
+protocol: "http"
+address: ":11434"
+description: "Ollama 0.24.0"
+# Lure: a self-hosted LLM server left open. Opened by the city planner when AI agents or LLM-API hunters show up.
+commands:
+  - regex: "^/(?:\\?.*)?$"
+    methods: [HEAD, GET]
+    handler: "Ollama is running"
+    headers:
+      - "Content-Type: text/plain; charset=utf-8"
+    statusCode: 200
+  - regex: "^/api/version(?:\\?.*)?$"
+    methods: [GET]
+    handler: '{"version":"0.24.0"}'
+    headers:
+      - "Content-Type: application/json; charset=utf-8"
+    statusCode: 200
+  - regex: "^/api/(?:tags|ps)(?:\\?.*)?$"
+    methods: [GET]
+    handler: '{"models":[{"name":"llama3.1:70b-instruct-q4_K_M","model":"llama3.1:70b-instruct-q4_K_M","size":42520413916,"digest":"c0df3564cfe8","details":{"family":"llama","parameter_size":"70.6B","quantization_level":"Q4_K_M"}},{"name":"qwen2.5-coder:32b","model":"qwen2.5-coder:32b","size":19851349856,"digest":"4bd6cbf2d094","details":{"family":"qwen2","parameter_size":"32.8B","quantization_level":"Q4_K_M"}}]}'
+    headers:
+      - "Content-Type: application/json; charset=utf-8"
+    statusCode: 200
+  - regex: "^/api/(?:generate|chat)(?:\\?.*)?$"
+    methods: [POST]
+    handler: '{"model":"llama3.1:70b-instruct-q4_K_M","created_at":"2026-10-10T12:00:00Z","message":{"role":"assistant","content":"I can help with that. Could you share more details?"},"response":"I can help with that. Could you share more details?","done":true,"done_reason":"stop","total_duration":1874223456,"eval_count":14}'
+    headers:
+      - "Content-Type: application/json; charset=utf-8"
+    statusCode: 200
+  - regex: "^/api/(?:pull|create|push|delete|copy)(?:\\?.*)?$"
+    methods: [POST, DELETE]
+    handler: '{"status":"success"}'
+    headers:
+      - "Content-Type: application/json; charset=utf-8"
+    statusCode: 200
+  - regex: "^/v1/models(?:\\?.*)?$"
+    methods: [GET]
+    handler: '{"object":"list","data":[{"id":"llama3.1:70b-instruct-q4_K_M","object":"model","created":1760097600,"owned_by":"library"},{"id":"qwen2.5-coder:32b","object":"model","created":1760097600,"owned_by":"library"}]}'
+    headers:
+      - "Content-Type: application/json"
+    statusCode: 200
+  - regex: "^/v1/(?:chat/)?completions(?:\\?.*)?$"
+    methods: [POST]
+    handler: '{"id":"chatcmpl-418","object":"chat.completion","created":1760097600,"model":"llama3.1:70b-instruct-q4_K_M","choices":[{"index":0,"message":{"role":"assistant","content":"I can help with that. Could you share more details?"},"finish_reason":"stop"}],"usage":{"prompt_tokens":24,"completion_tokens":14,"total_tokens":38}}'
+    headers:
+      - "Content-Type: application/json"
+    statusCode: 200
+  - regex: ".*"
+    handler: "404 page not found"
+    headers:
+      - "Content-Type: text/plain"
+    statusCode: 404

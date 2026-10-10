@@ -41,6 +41,9 @@
     },
     "attack:claude": {
       "cache": false
+    },
+    "attack:lures": {
+      "cache": false
     }
   }
 }

@@ -19,6 +19,7 @@ import {
 } from "./explore";
 import type { CityHandle, CityOptions } from "./model";
 import { AttackerCrowd, SEVERITY_GLOW, type AttackerSpec } from "./attackers";
+import { ConstructionSites } from "./construction";
 
 const INTRO_SECONDS = 2.2;
 const INTRO_ZOOM = 0.55;
@@ -63,6 +64,7 @@ export class CityScene implements CityHandle {
   private controls: OrbitControls;
   private world: CityWorld;
   private crowd: AttackerCrowd;
+  private construction: ConstructionSites;
   private sun = new THREE.DirectionalLight(0xfff1d5, 2.6);
   private ambient = new THREE.HemisphereLight(0xe8eff4, 0xa99a79, 2);
   private composer: EffectComposer;
@@ -142,6 +144,7 @@ export class CityScene implements CityHandle {
     this.scene.add(this.outdoor);
     this.world = buildWorld(this.outdoor);
     this.crowd = new AttackerCrowd(this.outdoor, this.world.art.figures);
+    this.construction = new ConstructionSites(this.outdoor);
     this.gradeToDashboard(this.outdoor);
     this.selection.rotation.x = -Math.PI / 2;
     this.selection.visible = false;
@@ -301,6 +304,11 @@ export class CityScene implements CityHandle {
 
   setAttackers(attackers: AttackerSpec[]) {
     this.crowd.sync(attackers);
+    this.dirty = true;
+  }
+
+  setConstruction(buildings: BuildingId[]) {
+    this.construction.sync(buildings);
     this.dirty = true;
   }
 
@@ -517,37 +525,6 @@ export class CityScene implements CityHandle {
       person.body.position.z,
     );
     this.dirty = true;
-  }
-
-  capture() {
-    try {
-      this.render();
-      const photo = document.createElement("canvas");
-      photo.width = this.canvas.width;
-      photo.height = this.canvas.height;
-      const context = photo.getContext("2d")!;
-      context.filter = getComputedStyle(this.canvas.parentElement!).filter;
-      context.drawImage(this.canvas, 0, 0);
-      photo.toBlob((blob) => {
-        if (!blob || this.disposed) {
-          this.options.onError(
-            "The image could not be saved. Try taking another photo.",
-          );
-          return;
-        }
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement("a");
-        link.href = url;
-        link.download = `honeyrizons-city-${Date.now()}.png`;
-        link.click();
-        this.options.onPhotoSaved();
-        setTimeout(() => URL.revokeObjectURL(url), 1000);
-      }, "image/png");
-    } catch {
-      this.options.onError(
-        "The image could not be saved. Try taking another photo.",
-      );
-    }
   }
 
   private cancelTransition = () => {
@@ -893,6 +870,7 @@ export class CityScene implements CityHandle {
               : Math.PI / 2;
     }
     this.crowd.update(this.elapsed, dt, moving, this.camera.zoom);
+    this.construction.update(this.elapsed, moving);
     this.world.bubbles.forEach(({ bubble, person }) => {
       bubble.position
         .copy(person.body.position)
@@ -946,6 +924,7 @@ export class CityScene implements CityHandle {
   dispose() {
     this.disposed = true;
     this.crowd.dispose();
+    this.construction.dispose();
     this.renderer.setAnimationLoop(null);
     this.observer.disconnect();
     this.controls.removeEventListener("start", this.cancelTransition);

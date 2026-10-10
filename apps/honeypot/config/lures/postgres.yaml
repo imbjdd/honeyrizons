@@ -1,0 +1,37 @@
+apiVersion: "v1"
+protocol: "tcp"
+address: ":5432"
+description: "PostgreSQL 16.4"
+# Lure: a database that asks for a cleartext password, so every guess is logged. Opened when database hunters show up.
+wireEncoding: "latin1"
+framing:
+  # Until the startup message: a big-endian int32 length that counts itself, and no type byte.
+  mode: "length-prefix"
+  lengthOffset: 0
+  lengthSize: 4
+  bigEndian: true
+  lengthIncludesHeader: true
+banner: ""
+commands:
+  # SSLRequest: no TLS here, carry on in cleartext.
+  - regex: "(?s)^\\x00\\x00\\x00\\x08\\x04\\xd2\\x16\\x2f"
+    handler: "N"
+    name: "ssl_refused"
+  # PasswordMessage: refuse it, the way a wrong password is refused.
+  - regex: "(?s)^p"
+    handler: "E\x00\x00\x00\x33SFATAL\x00C28P01\x00Mpassword authentication failed\x00\x00"
+    name: "password_rejected"
+    closeAfter: true
+  # StartupMessage (and anything else): ask for a cleartext password.
+  - regex: "(?s)^(.+)$"
+    handler: "R\x00\x00\x00\x08\x00\x00\x00\x03"
+    name: "password_requested"
+    # From here on every message is a type byte, then an int32 length that counts itself but not the type.
+    nextFraming:
+      mode: "length-prefix"
+      lengthOffset: 1
+      lengthSize: 4
+      headerSize: 1
+      bigEndian: true
+deadlineTimeoutSeconds: 30
+serverName: "pg-billing-01"

@@ -34,10 +34,10 @@ const COMPACT_WIDTH = 760;
 const EXIT_MS = 150;
 
 const NAV = [
-  { page: "overview", label: "Vue d'ensemble", Icon: HomeIcon },
+  { page: "overview", label: "Overview", Icon: HomeIcon },
   { page: "services", label: "Services", Icon: ServerIcon },
   { page: "sessions", label: "Sessions", Icon: TerminalIcon },
-  { page: "settings", label: "Réglages", Icon: SettingsIcon },
+  { page: "settings", label: "Settings", Icon: SettingsIcon },
 ] as const satisfies readonly { page: AnalyticsDashboardPage; label: string; Icon: typeof HomeIcon }[];
 
 const PAGES: Record<AnalyticsDashboardPage, () => ReactNode> = {
@@ -237,7 +237,7 @@ export function AnalyticsDashboard({
           data-booted={booted}
         >
           <nav id={navId} className="rail" aria-label="Primary" data-expanded={navOpen}>
-            <button type="button" className="rail-brand press" aria-label={`${brand.name}, vue d'ensemble`} onClick={() => navigate("overview")}>
+            <button type="button" className="rail-brand press" aria-label={`${brand.name} overview`} onClick={() => navigate("overview")}>
               {brand.logo ? (
                 <span className="rail-logo-custom">{brand.logo}</span>
               ) : (
@@ -280,15 +280,15 @@ export function AnalyticsDashboard({
             <button
               type="button"
               className="rail-account press has-tip tip-right"
-              data-tip={status.connected ? "Flux en direct" : "Déconnecté"}
-              aria-label={status.connected ? "Flux en direct, réglages" : "Déconnecté, réglages"}
+              data-tip={status.connected ? "Live stream" : "Disconnected"}
+              aria-label={status.connected ? "Live stream, settings" : "Disconnected, settings"}
               onClick={() => navigate("settings")}
             >
               <span className="rail-icon live-dot-wrap">
                 <span className="live-dot" data-live={status.connected} />
               </span>
               <span className="rail-label rail-account-text" aria-hidden="true">
-                <span className="rail-account-name">{status.connected ? "Live" : "Hors ligne"}</span>
+                <span className="rail-account-name">{status.connected ? "Live" : "Offline"}</span>
                 <span className="rail-account-mail">{status.totalEvents} events</span>
               </span>
             </button>
@@ -299,8 +299,8 @@ export function AnalyticsDashboard({
               <button
                 type="button"
                 className="icon-btn press has-tip tip-below"
-                data-tip={navOpen ? "Réduire le menu" : "Déplier le menu"}
-                aria-label="Menu"
+                data-tip={navOpen ? "Collapse sidebar" : "Expand sidebar"}
+                aria-label="Sidebar"
                 aria-expanded={navOpen}
                 aria-controls={navId}
                 onClick={() => setNavOpen((o) => !o)}
@@ -317,10 +317,10 @@ export function AnalyticsDashboard({
                   ref={reopenRef}
                   type="button"
                   className="icon-btn press has-tip tip-below tip-end details-reopen"
-                  data-tip="Afficher les détails"
+                  data-tip="Show session details"
                   data-visible={!detailsVisible}
                   inert={detailsVisible}
-                  aria-label="Afficher les détails"
+                  aria-label="Show session details"
                   aria-expanded={detailsVisible}
                   aria-controls={detailsId}
                   onClick={showDetails}
@@ -343,7 +343,7 @@ export function AnalyticsDashboard({
           <button
             type="button"
             className="scrim"
-            aria-label="Fermer le panneau"
+            aria-label="Close panel"
             tabIndex={-1}
             // Keep focus where it was instead of parking it on the scrim.
             onMouseDown={(e) => e.preventDefault()}

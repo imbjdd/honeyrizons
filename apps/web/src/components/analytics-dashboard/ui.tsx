@@ -225,7 +225,7 @@ export function SessionRow({
       <div className="pr-text">
         <p className="pr-title">{sessionTitle(session)}</p>
         <p className="pr-sub">
-          {session.ip || "IP inconnue"} · {session.service} · il y a {relativeTime(session.end, now)}
+          {session.ip || "Unknown IP"} · {session.service} · {relativeTime(session.end, now)} ago
         </p>
       </div>
       <StatusPill status={session.status} />
@@ -233,10 +233,10 @@ export function SessionRow({
         type="button"
         className="btn-details press"
         aria-pressed={selected}
-        aria-label={`Détails de la session ${session.ip}`}
+        aria-label={`Details for session from ${session.ip}`}
         onClick={() => onOpen(session.key)}
       >
-        Détails
+        Details
       </button>
     </li>
   );

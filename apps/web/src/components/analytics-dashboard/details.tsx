@@ -1,6 +1,7 @@
 import { useId, useRef, useState, type CSSProperties, type ReactNode, type RefObject } from "react";
 import { useDashboard } from "./context";
-import { formatDuration, sessionTitle, type AnalyticsSession } from "./data";
+import { countryName, formatDuration, sessionTitle, type AnalyticsSession } from "./data";
+import { CountryFlag } from "./flag";
 import { PanelIcon, TriangleIcon } from "./icons";
 import { IpAvatar, ProtocolIcon } from "./ui";
 
@@ -18,8 +19,8 @@ type Props = {
   onHide: () => void;
 };
 
-const formatTime = (t: number) => new Date(t).toLocaleTimeString("fr-FR");
-const formatDate = (t: number) => new Date(t).toLocaleString("fr-FR", { dateStyle: "medium", timeStyle: "medium" });
+const formatTime = (t: number) => new Date(t).toLocaleTimeString("en-US", { hour12: false });
+const formatDate = (t: number) => new Date(t).toLocaleString("en-US", { dateStyle: "medium", timeStyle: "medium", hour12: false });
 
 export function SessionDetails({ session, phase, open, visible, panelRef, hideRef, onHide }: Props) {
   const { uid } = useDashboard();
@@ -41,8 +42,8 @@ export function SessionDetails({ session, phase, open, visible, panelRef, hideRe
           ref={hideRef}
           type="button"
           className="icon-btn press has-tip tip-below details-hide"
-          data-tip="Masquer les détails"
-          aria-label="Masquer les détails"
+          data-tip="Hide session details"
+          aria-label="Hide session details"
           aria-expanded={visible}
           aria-controls={panelId}
           onClick={onHide}
@@ -70,7 +71,14 @@ export function SessionDetails({ session, phase, open, visible, panelRef, hideRe
                 <dt>Source</dt>
                 <dd>
                   <IpAvatar ip={session.ip} size={22} />
-                  <span className="mono">{session.ip || "inconnue"}</span>
+                  <span className="mono">{session.ip || "unknown"}</span>
+                </dd>
+              </div>
+              <div>
+                <dt>Country</dt>
+                <dd>
+                  {session.country && <CountryFlag code={session.country} size={18} />}
+                  {countryName(session.country)}
                 </dd>
               </div>
               <div>
@@ -78,11 +86,11 @@ export function SessionDetails({ session, phase, open, visible, panelRef, hideRe
                 <dd>{session.service}</dd>
               </div>
               <div>
-                <dt>Début</dt>
+                <dt>Started</dt>
                 <dd>{formatDate(session.start)}</dd>
               </div>
               <div>
-                <dt>Durée</dt>
+                <dt>Duration</dt>
                 <dd>{formatDuration(session.end - session.start)}</dd>
               </div>
               {session.client && (
@@ -107,9 +115,9 @@ export function SessionDetails({ session, phase, open, visible, panelRef, hideRe
               </Disclosure>
             )}
 
-            <Disclosure key={`t-${session.key}`} title={isHttp ? `Requêtes (${session.interactions.length})` : `Transcript (${session.interactions.length})`}>
+            <Disclosure key={`t-${session.key}`} title={isHttp ? `Requests (${session.interactions.length})` : `Transcript (${session.interactions.length})`}>
               {session.interactions.length === 0 ? (
-                <p>Aucune commande enregistrée.</p>
+                <p>No commands recorded.</p>
               ) : (
                 <ol className="transcript">
                   {session.interactions.map((it, i) => (
@@ -126,7 +134,7 @@ export function SessionDetails({ session, phase, open, visible, panelRef, hideRe
               )}
             </Disclosure>
 
-            <Disclosure key={`r-${session.key}`} title={`Events bruts (${session.events.length})`} defaultOpen={false}>
+            <Disclosure key={`r-${session.key}`} title={`Raw events (${session.events.length})`} defaultOpen={false}>
               <pre className="transcript-out raw">{JSON.stringify(session.events, null, 2)}</pre>
             </Disclosure>
           </div>

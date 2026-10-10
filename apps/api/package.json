@@ -8,11 +8,13 @@
     "typecheck": "tsc"
   },
   "dependencies": {
-    "@honeyrizons/shared": "workspace:*"
+    "@honeyrizons/shared": "workspace:*",
+    "geoip-lite": "^2.0.3"
   },
   "devDependencies": {
     "@honeyrizons/tsconfig": "workspace:*",
     "@types/bun": "latest",
+    "@types/geoip-lite": "^1.4.4",
     "typescript": "^5.9.0"
   }
 }

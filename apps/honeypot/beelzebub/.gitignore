@@ -1,0 +1,17 @@
+.DS_Store
+.idea
+logs
+.vscode
+.history
+coverage*.out
+integration_test/certs/tls.crt
+integration_test/certs/tls.key
+.env
+.codex
+.local
+.opencode/
+node_modules/
+package-lock.json
+/beelzebub
+/.beelzebub-mode
+/plugins/*/

@@ -1,0 +1,10 @@
+{
+  "extends": ["//"],
+  "tasks": {
+    "start": {
+      "dependsOn": ["@honeyrizons/web#build"],
+      "cache": false,
+      "persistent": true
+    }
+  }
+}

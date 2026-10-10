@@ -1,0 +1,7 @@
+{
+  "extends": "@honeyrizons/tsconfig/base.json",
+  "compilerOptions": {
+    "types": ["bun"]
+  },
+  "include": ["src"]
+}

@@ -1,0 +1,50 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://beelzebub-labs.github.io/specs/runtime-ssh.schema.json",
+  "title": "Beelzebub SSH Honeypot Configuration",
+  "allOf": [
+    {
+      "$ref": "runtime-config.schema.json"
+    },
+    {
+      "required": [
+        "passwordRegex",
+        "serverVersion",
+        "commands"
+      ],
+      "properties": {
+        "maxHistory": false,
+        "wireEncoding": false,
+        "framing": false,
+        "wirePlugins": false,
+        "passwordRegex": {
+          "minLength": 1
+        },
+        "commands": {
+          "minItems": 1,
+          "items": {
+            "properties": {
+              "closeAfter": false,
+              "tlsUpgrade": false,
+              "tlsFraming": false,
+              "nextFraming": false,
+              "binaryOutput": false,
+              "patches": false
+            }
+          }
+        },
+        "fallbackCommand": {
+          "properties": {
+            "closeAfter": false,
+            "tlsUpgrade": false,
+            "tlsFraming": false,
+            "nextFraming": false,
+            "binaryOutput": false,
+            "patches": false
+          }
+        },
+        "tools": false
+      }
+    }
+  ]
+}

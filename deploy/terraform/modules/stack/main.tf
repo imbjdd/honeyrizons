@@ -24,12 +24,14 @@ resource "terraform_data" "images" {
 
   provisioner "local-exec" {
     working_dir = var.repo_root
-    environment = {
-      AWS_PROFILE = var.profile
-      AWS_REGION  = var.region
-      REGISTRY    = var.registry
-      TAG         = local.image_tag
-    }
+    environment = merge(
+      {
+        AWS_REGION = var.region
+        REGISTRY   = var.registry
+        TAG        = local.image_tag
+      },
+      var.profile != "" ? { AWS_PROFILE = var.profile } : {},
+    )
     command     = <<-EOT
       set -eu
       CLI=$(command -v podman || command -v docker)
@@ -214,15 +216,17 @@ resource "terraform_data" "deploy" {
   triggers_replace = [var.source_hash, local.image_tag, aws_instance.honeypot.id]
 
   provisioner "local-exec" {
-    environment = {
-      AWS_PROFILE       = var.profile
-      AWS_REGION        = var.region
-      INSTANCE          = aws_instance.honeypot.id
-      HONEYPOT_LOCATION = var.location
-      REGISTRY          = var.registry
-      IMAGE_TAG         = local.image_tag
-      COMPOSE_B64       = filebase64("${var.repo_root}/docker-compose.yml")
-    }
+    environment = merge(
+      {
+        AWS_REGION        = var.region
+        INSTANCE          = aws_instance.honeypot.id
+        HONEYPOT_LOCATION = var.location
+        REGISTRY          = var.registry
+        IMAGE_TAG         = local.image_tag
+        COMPOSE_B64       = filebase64("${var.repo_root}/docker-compose.yml")
+      },
+      var.profile != "" ? { AWS_PROFILE = var.profile } : {},
+    )
     command     = "${path.module}/deploy.sh"
     interpreter = ["bash"]
   }

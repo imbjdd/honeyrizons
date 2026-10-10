@@ -4,6 +4,18 @@ Honeypot basé sur [Beelzebub](https://github.com/beelzebub-labs/beelzebub) + un
 
 Monorepo [Turborepo](https://turborepo.com) + workspaces Bun.
 
+## Frontend ville 3D
+
+La page d'accueil est une ville voxel Three.js inspirée de [ZStreet](https://zstreet.cash/), avec cinq quartiers, circulation animée, mode jour/nuit et export photo. Elle utilise des données de démonstration locales.
+
+```bash
+bun install
+bun run dev:web    # frontend seul, sans API ni honeypot, sur :5173
+bun run build:web
+```
+
+Le dashboard original reste accessible sur `/dashboard`. Les captures, la vidéo, les instructions et les points d'intégration futurs sont dans [docs/city](docs/city/README.md).
+
 ```
 apps/
   honeypot/        @honeyrizons/honeypot — Beelzebub (Go)

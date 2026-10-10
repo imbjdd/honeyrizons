@@ -1,0 +1,41 @@
+# Production stack: honeypot writes JSON events to the shared `logs` volume, dashboard tails it.
+#   docker compose up -d --build
+services:
+  honeypot:
+    image: ${REGISTRY:-localhost}/honeyrizons-honeypot:${IMAGE_TAG:-latest}
+    build: ./apps/honeypot
+    restart: unless-stopped
+    ports:
+      # Host port (what attackers hit) : container port. Set HONEYPOT_SSH_PORT=22 once the
+      # host's real sshd is off port 22 (e.g. admin via AWS SSM).
+      - "${HONEYPOT_SSH_PORT:-2222}:2222"
+      - "23:2323"
+      - "80:8080"
+      - "3306:3306"
+      - "6379:6379"
+      - "8000:8000"
+      # Prometheus metrics, local only.
+      - "127.0.0.1:2112:2112"
+    volumes:
+      - logs:/app/logs
+
+  dashboard:
+    image: ${REGISTRY:-localhost}/honeyrizons-dashboard:${IMAGE_TAG:-latest}
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    restart: unless-stopped
+    depends_on: [honeypot]
+    # Bun as PID 1 ignores SIGTERM; tini forwards it so stops are instant.
+    init: true
+    environment:
+      # "lat,lon" of the honeypot on the attack map.
+      HONEYPOT_LOCATION: ${HONEYPOT_LOCATION:-48.8566,2.3522}
+    # Localhost by default; on AWS DASHBOARD_BIND=0.0.0.0 and the security group only lets CloudFront in.
+    ports:
+      - "${DASHBOARD_BIND:-127.0.0.1}:4000:4000"
+    volumes:
+      - logs:/app/logs:ro
+
+volumes:
+  logs:

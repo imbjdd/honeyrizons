@@ -1,0 +1,75 @@
+name: deploy
+
+# Push to main → build images and deploy to staging automatically.
+# Prod runs only after the "production" GitHub Environment approval is granted.
+on:
+  push:
+    branches: [main]
+    paths:
+      - "apps/**"
+      - "packages/**"
+      - "docker-compose.yml"
+      - "package.json"
+      - "bun.lock"
+      - "deploy/terraform/**"
+      - ".github/workflows/deploy.yml"
+  workflow_dispatch:
+
+concurrency:
+  group: deploy
+  cancel-in-progress: false
+
+permissions:
+  id-token: write # assume the AWS deploy role via OIDC
+  contents: read
+
+env:
+  AWS_REGION: eu-west-1
+  TF_VERSION: 1.13.3
+
+jobs:
+  staging:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+          terraform_wrapper: false
+      - name: Deploy staging
+        working-directory: deploy/terraform/staging
+        run: |
+          terraform init -input=false
+          terraform apply -input=false -auto-approve \
+            -var profile="" -var attacker_count=2
+      - name: Dashboard URL
+        working-directory: deploy/terraform/staging
+        run: terraform output -raw dashboard_url >> "$GITHUB_STEP_SUMMARY"
+
+  prod:
+    needs: staging
+    runs-on: ubuntu-latest
+    environment: production # add required reviewers on this Environment for manual approval
+    steps:
+      - uses: actions/checkout@v4
+      - uses: aws-actions/configure-aws-credentials@v4
+        with:
+          role-to-assume: ${{ vars.AWS_DEPLOY_ROLE_ARN }}
+          aws-region: ${{ env.AWS_REGION }}
+      - uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TF_VERSION }}
+          terraform_wrapper: false
+      - name: Deploy prod
+        working-directory: deploy/terraform/prod
+        run: |
+          terraform init -input=false
+          terraform apply -input=false -auto-approve \
+            -var profile="" -var attacker_count=2
+      - name: Dashboard URL
+        working-directory: deploy/terraform/prod
+        run: terraform output -raw dashboard_url >> "$GITHUB_STEP_SUMMARY"

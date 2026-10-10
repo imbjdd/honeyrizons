@@ -300,6 +300,74 @@ commands:
       - "Server: Apache/2.4.67 (Debian)"
     statusCode: 200
 
+  # --- Decoy API / AI-agent surface -------------------------------------
+  # Credential-stuffing and agent-abuse bait. These endpoints look like a real
+  # app + LLM gateway so attackers try them; every request is logged.
+
+  # App login (JSON) — classic credential stuffing target.
+  - regex: "^/api/(?:v1/)?(?:auth/)?login/?$"
+    methods: [POST]
+    handler: '{"error":"invalid_credentials","message":"Invalid email or password."}'
+    headers:
+      - "Content-Type: application/json"
+      - "WWW-Authenticate: Bearer"
+      - "Server: nginx"
+    statusCode: 401
+
+  - regex: "^/api/(?:v1/)?(?:auth/)?(?:login|token|refresh)/?$"
+    methods: [GET, HEAD]
+    handler: '{"error":"method_not_allowed"}'
+    headers:
+      - "Content-Type: application/json"
+      - "Allow: POST"
+      - "Server: nginx"
+    statusCode: 405
+
+  # OpenAI-style LLM gateway — bait for leaked/abused API keys and agent traffic.
+  - regex: "^/v1/(?:chat/completions|completions|responses|embeddings|messages)/?$"
+    methods: [POST]
+    handler: '{"error":{"message":"Incorrect API key provided. You can find your API key at https://platform.example.com/account/api-keys.","type":"invalid_request_error","param":null,"code":"invalid_api_key"}}'
+    headers:
+      - "Content-Type: application/json"
+      - "Server: nginx"
+    statusCode: 401
+
+  - regex: "^/v1/models/?$"
+    methods: [GET, HEAD]
+    handler: '{"error":{"message":"You didn''t provide an API key.","type":"invalid_request_error","param":null,"code":null}}'
+    headers:
+      - "Content-Type: application/json"
+      - "Server: nginx"
+    statusCode: 401
+
+  # Agent orchestration / tool-execution endpoints (LangServe / MCP style).
+  - regex: "^/(?:api/)?(?:agent|agents|assistants|runs|invoke|mcp|tools/execute)(?:/.*)?/?$"
+    methods: [GET, HEAD, POST]
+    handler: '{"error":"unauthorized","detail":"Missing or invalid authentication token."}'
+    headers:
+      - "Content-Type: application/json"
+      - "WWW-Authenticate: Bearer"
+      - "Server: nginx"
+    statusCode: 401
+
+  # Agent discovery manifest — makes the host look like an exposed AI plugin host.
+  - regex: "^/\\.well-known/(?:ai-plugin\\.json|mcp\\.json|agent\\.json)$"
+    methods: [GET, HEAD]
+    handler: '{"schema_version":"v1","name_for_model":"example","name_for_human":"Example Assistant","auth":{"type":"service_http","authorization_type":"bearer"},"api":{"type":"openapi","url":"/openapi.yaml"}}'
+    headers:
+      - "Content-Type: application/json"
+      - "Server: nginx"
+    statusCode: 200
+
+  # GraphQL login mutations are another common stuffing vector.
+  - regex: "^/graphql/?$"
+    methods: [POST, GET]
+    handler: '{"errors":[{"message":"Authentication required","extensions":{"code":"UNAUTHENTICATED"}}],"data":null}'
+    headers:
+      - "Content-Type: application/json"
+      - "Server: nginx"
+    statusCode: 401
+
 fallbackCommand:
   handler: "<!doctype html><html><head><meta name=\"generator\" content=\"WordPress 6.9.4\"><title>Page not found — Example Site</title></head><body><h1>Page not found</h1><p>The requested URL was not found on this server.</p></body></html>"
   headers:

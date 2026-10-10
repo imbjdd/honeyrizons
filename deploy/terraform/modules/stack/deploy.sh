@@ -16,6 +16,11 @@ for i in \$(seq 60); do [ -f /opt/honeyrizons/.ready ] && break; sleep 10; done
 cd /opt/honeyrizons
 echo $COMPOSE_B64 | base64 -d > docker-compose.yml
 printf "REGISTRY=$REGISTRY\nIMAGE_TAG=$IMAGE_TAG\nHONEYPOT_SSH_PORT=22\nDASHBOARD_BIND=0.0.0.0\nHONEYPOT_LOCATION=$HONEYPOT_LOCATION\n" > .env
+# Optional analyst key (SecureString). Tracing off so it never lands in SSM/CI output.
+set +x
+KEY=\$(aws ssm get-parameter --region $AWS_REGION --name /honeyrizons/openai_api_key --with-decryption --query Parameter.Value --output text 2>/dev/null || true)
+[ -n "\$KEY" ] && echo "OPENAI_API_KEY=\$KEY" >> .env && echo "analyst key: set" || echo "analyst key: none"
+set -x
 aws ecr get-login-password --region $AWS_REGION | docker login --username AWS --password-stdin $REGISTRY
 docker compose pull
 docker compose up -d --no-build

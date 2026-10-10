@@ -12,7 +12,9 @@
     "start": "turbo run start",
     "typecheck": "turbo run typecheck",
     "attack": "turbo run attack --filter=@honeyrizons/honeypot",
-    "seed": "turbo run seed --filter=@honeyrizons/honeypot"
+    "seed": "turbo run seed --filter=@honeyrizons/honeypot",
+    "attack:agent": "turbo run attack:agent --filter=@honeyrizons/honeypot",
+    "attack:claude": "turbo run attack:claude --filter=@honeyrizons/honeypot"
   },
   "devDependencies": {
     "turbo": "^2.11.7"

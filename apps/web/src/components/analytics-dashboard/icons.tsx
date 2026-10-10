@@ -218,6 +218,17 @@ export const ClaudeIcon = ({ size = 16, ...rest }: IconProps) => (
   </svg>
 );
 
+export const BotIcon = (p: IconProps) => (
+  <Base {...p}>
+    <path d="M12 8V4H8" />
+    <rect width="16" height="12" x="4" y="8" rx="2" />
+    <path d="M2 14h2" />
+    <path d="M20 14h2" />
+    <path d="M15 13v2" />
+    <path d="M9 13v2" />
+  </Base>
+);
+
 export const PulseIcon = (p: IconProps) => (
   <Base {...p}>
     <path d="M3 12h4l3-8 4 16 3-8h4" />

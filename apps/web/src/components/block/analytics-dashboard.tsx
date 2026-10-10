@@ -25,9 +25,10 @@ import {
 import type { ChronicleEvent, IntelSnapshot } from "@honeyrizons/shared";
 import type { AnalyticsDashboardData } from "@/components/analytics-dashboard/data";
 import { SessionDetails, type Phase } from "@/components/analytics-dashboard/details";
-import { BotIcon, CityIcon, HomeIcon, PanelIcon, ServerIcon, SettingsIcon, TerminalIcon } from "@/components/analytics-dashboard/icons";
+import { BookIcon, BotIcon, CityIcon, HomeIcon, PanelIcon, ServerIcon, SettingsIcon, TerminalIcon } from "@/components/analytics-dashboard/icons";
 import { OverviewPage, ServicesPage, SessionsPage, SettingsPage } from "@/components/analytics-dashboard/pages";
 import { AgentsPage } from "@/components/analytics-dashboard/agents";
+import { ReportsPage } from "@/components/analytics-dashboard/reports";
 import "./analytics-dashboard.css";
 
 export type { AnalyticsDashboardData } from "@/components/analytics-dashboard/data";
@@ -47,6 +48,7 @@ const NAV = [
   { page: "city", label: "City", Icon: CityIcon },
   { page: "services", label: "Services", Icon: ServerIcon },
   { page: "sessions", label: "Sessions", Icon: TerminalIcon },
+  { page: "reports", label: "Reports", Icon: BookIcon },
   { page: "settings", label: "Settings", Icon: SettingsIcon },
 ] as const satisfies readonly { page: AnalyticsDashboardPage; label: string; Icon: typeof HomeIcon }[];
 
@@ -56,6 +58,7 @@ const PAGES: Record<AnalyticsDashboardPage, ComponentType> = {
   city: CityPage,
   services: ServicesPage,
   sessions: SessionsPage,
+  reports: ReportsPage,
   settings: SettingsPage,
 };
 

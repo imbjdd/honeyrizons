@@ -7,6 +7,7 @@ const PATHS: Record<AnalyticsDashboardPage, string> = {
   city: "/city",
   services: "/services",
   sessions: "/sessions",
+  reports: "/reports",
   settings: "/settings",
 };
 

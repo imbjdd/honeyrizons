@@ -4,26 +4,26 @@ An explorable Three.js city inspired by [ZStreet](https://zstreet.cash/). The re
 
 ## Run
 
-From the repository root:
+The city is the **City** page of the dashboard (`/city`). From the repository root:
 
     bun install
-    bun run dev:web
+    bun run dev
 
-Open http://localhost:5173. The city uses local demo data and needs no API or honeypot processes. The existing analytics dashboard remains at `/dashboard`.
+Open http://localhost:5173/city. It shows the live honeypot: run `bun run attack` or `bun run seed` to see districts light up.
 
-    bun run build:web
+    bun run build
     bun run typecheck
     bun test tests/room-walking.test.ts
 
 ## Explore
 
-Outside, drag to pan, scroll or pinch to zoom, and right-drag or use two fingers to rotate. Click a building to enter. Explore buildings and Places provide the same destinations through buttons. Click a resident to talk or follow.
+Outside, drag to pan, scroll or pinch to zoom, and right-drag or use two fingers to rotate. Click a building to enter, or pick one from the Buildings button in the toolbar. Click a resident to talk or follow.
 
 Inside, use WASD or ZQSD to walk, Shift to walk faster, and drag to look. Arrow keys walk and turn. E or Enter interacts with the object under the crosshair. Free look locks the mouse; Escape releases it. Phones have four movement buttons and drag-to-look controls.
 
 Stairs connect the floors without scene cuts. The floor menu offers shortcuts. Walking through the ground-floor door, Return to the street, or Escape restores the outdoor camera. Resident shortcuts find a clear spot nearby and face the character. Talking pauses player input. Coffee, watering and record actions run locally.
 
-The automatic day cycle starts at 10:00. Day and Night fix the time; Follow my clock uses local time. Pause, reduced motion and hidden tabs stop the automatic cycle. Reduced motion also stops traffic and residents while allowing manual walking. Sound starts after a click. Photo mode exports PNGs.
+The city is always at night, to match the dashboard. Pause (Space), reduced motion and hidden tabs stop traffic, residents and attackers while allowing manual walking. Sound starts after a click. Photo mode exports PNGs.
 
 ## Buildings and floors
 
@@ -56,9 +56,31 @@ The automatic day cycle starts at 10:00. Day and Night fix the time; Follow my c
 
 ## Code and integration
 
-Frontend code lives in [apps/web/src/city](../../apps/web/src/city/). `explore.ts` is the shared building catalog for exterior geometry, entrances, floor menus and residents. `roomLayouts.ts` authors each floor plan. `interiors.ts` assembles connected floors; `RoomController.ts` handles walking, collision and stairs. `world.ts` constructs the skyline and traffic. Sprites and portraits share original canvas pixel art, including service bots.
+Frontend code lives in [apps/web/src/city](../../apps/web/src/city/) and renders inside the dashboard shell
+(`components/block/analytics-dashboard.tsx`), which loads it lazily so three.js only ships when the page opens.
 
-`useDemoCity.ts` is the future event adapter boundary. The city makes no API or SSE requests. Its totals and conversations remain local fixtures. The upstream dashboard and attack globe are preserved at `/dashboard` and load separately.
+- `CityPage.tsx` composes the page: the 3D stage fills the dashboard's main area, with overlays that reuse the
+  dashboard's primitives and tokens (`CityToolbar`, `CityServiceLabels`, `CityServiceCard`, `CityFeed`,
+  `ExploreOverlay`); `city.css` is scoped under `.city-page`.
+- **Building = service.** `SERVICE_BUILDINGS` in `model.ts` maps each honeypot service port to a landmark: SSH →
+  Honey Tower, WordPress → Web Hotel, MCP → Bot Works, Telnet → Circuit Market, MySQL → The Archive, Redis → Cache
+  Gardens. A label above each one shows its sessions in the last 24h and its worst severity; clicking it opens the
+  service card.
+- **Attacker = person.** `useCityActivity.ts` turns the last 24h of sessions into attackers (most severe and most
+  recent first, up to 32). `attackers.ts` walks them along the streets to their service's door, lets them loiter,
+  and sends them back out before they return. Humans wear hoods, AI agents (MCP) are bots, and medium-and-above
+  threats carry a severity marker drawn over the buildings at a constant size. New sessions walk in immediately and
+  ring the door in their severity color. Clicking an attacker (or its marker) opens its session in the dashboard's
+  details panel, and the open session is circled in the street.
+- The city is always at night, lit and graded to the dashboard's charcoal background so the canvas edge disappears.
+- `CityCanvas.tsx` / `CityScene.ts` own the three.js scene behind the imperative `CityHandle` API. The scene adapts to
+  its container and reports hover positions relative to the canvas.
+- `explore.ts` is the shared building catalog for exterior geometry, entrances, floor menus and residents.
+  `roomLayouts.ts` authors each floor plan, `interiors.ts` assembles connected floors, `RoomController.ts` handles
+  walking, collision and stairs, and `world.ts` constructs the skyline and traffic. Sprites and portraits share
+  original canvas pixel art.
+
+Residents and their conversations stay local, scripted flavor; everything about attacks comes from the honeypot.
 
 ## Captures
 

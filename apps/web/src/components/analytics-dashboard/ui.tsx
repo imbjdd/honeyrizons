@@ -6,6 +6,7 @@ import { protocolColor } from "@honeyrizons/shared";
 import { attackerColor, relativeTime, sessionTitle, type AnalyticsSession, type AnalyticsSessionStatus } from "./data";
 import { BotIcon, CheckIcon, GlobeIcon, PulseIcon, RadarIcon, ServerIcon, TerminalIcon } from "./icons";
 import { NumberAnimation } from "./number-animation";
+import { ThreatBadge } from "./ai";
 
 /** "3.4h" → "0.0h", "+12%" → "+0%": the resting shape the reels roll up from. */
 const zeroed = (text: string) => text.replace(/\d+/g, "0");
@@ -228,6 +229,7 @@ export function SessionRow({
           {session.ip || "Unknown IP"} · {session.service} · {relativeTime(session.end, now)} ago
         </p>
       </div>
+      <ThreatBadge session={session} />
       <StatusPill status={session.status} />
       <button
         type="button"

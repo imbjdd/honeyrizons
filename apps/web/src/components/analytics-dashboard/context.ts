@@ -1,7 +1,8 @@
 import { createContext, useContext } from "react";
+import type { IntelSnapshot } from "@honeyrizons/shared";
 import type { AnalyticsDashboardData } from "./data";
 
-export type AnalyticsDashboardPage = "overview" | "services" | "sessions" | "settings";
+export type AnalyticsDashboardPage = "overview" | "city" | "services" | "sessions" | "settings";
 
 export type AnalyticsDashboardAccent = "blue" | "violet" | "teal" | "amber";
 
@@ -23,6 +24,8 @@ export type AnalyticsDashboardStatus = {
 type DashboardState = {
   data: AnalyticsDashboardData;
   status: AnalyticsDashboardStatus;
+  /** Automatic triage results from the analyst agent, keyed by session. */
+  intel: IntelSnapshot;
   now: number;
   /** Prefix for element ids, unique per dashboard instance. */
   uid: string;

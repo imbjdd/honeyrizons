@@ -21,14 +21,18 @@ const skins = [
   "#9b674d",
   "#ddb08b",
 ];
+/** A dedicated look for the mayor: navy suit, white shirt, red tie. Chosen so no generic accessory applies. */
+export const MAYOR_LOOK = 107;
+
 export function characterCanvas(look: number, frame = 0) {
   const canvas = document.createElement("canvas");
   canvas.width = 32;
   canvas.height = 48;
   const c = canvas.getContext("2d")!;
-  const color = outfits[look % outfits.length];
-  const skin = skins[look % skins.length];
-  const hair = ["#4a3837", "#263e4d", "#e0cfb4", "#5d4840"][look % 4];
+  const mayor = look === MAYOR_LOOK;
+  const color = mayor ? "#1d2a44" : outfits[look % outfits.length];
+  const skin = mayor ? "#e6c09a" : skins[look % skins.length];
+  const hair = mayor ? "#3a2e28" : ["#4a3837", "#263e4d", "#e0cfb4", "#5d4840"][look % 4];
   const p = (x: number, y: number, w: number, h: number, color: string) => {
     c.fillStyle = color;
     c.fillRect(x, y, w, h);
@@ -90,6 +94,13 @@ export function characterCanvas(look: number, frame = 0) {
     p(24, 32, 5, 1, "#8c5c47");
     p(24, 35, 5, 1, "#8c5c47");
   }
+  if (mayor) {
+    // Shirt and tie over the suit, and a tidy short cut.
+    p(13, 23, 7, 11, "#f2f4f7");
+    p(15, 24, 3, 9, "#b3262e");
+    p(10, 24, 2, 6, color);
+    p(6, 5, 20, 5, hair);
+  }
   // Service bots use the same two-frame body rig, with a faceplate and antenna.
   if ([13, 15, 19, 25].includes(look)) {
     p(6, 5, 21, 17, "#20364d");
@@ -117,3 +128,4 @@ export function portrait(look: number) {
   }
   return src;
 }
+

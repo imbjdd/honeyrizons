@@ -1,4 +1,5 @@
-import type { Protocol } from "./model";
+import type { DistrictId } from "./model";
+import { MAYOR_LOOK } from "./portraits";
 
 export type BuildingId =
   | "tower"
@@ -79,7 +80,7 @@ export interface Building {
   name: string;
   japanese: string;
   color: string;
-  protocol: Protocol;
+  district: DistrictId;
   position: [number, number, number];
   exterior: {
     width: number;
@@ -98,7 +99,7 @@ const venue = (
   id: BuildingId,
   name: string,
   color: string,
-  protocol: Protocol,
+  district: DistrictId,
   x: number,
   z: number,
   height: number,
@@ -111,7 +112,7 @@ const venue = (
   name,
   japanese: "",
   color,
-  protocol,
+  district,
   position: [x, 0, z],
   exterior: { width, depth, height, form },
   floors,
@@ -243,7 +244,7 @@ export const buildings: Building[] = [
       "Two teams of terminals face each other across the arena.",
     ),
   ]),
-  venue("robotics", "Bot Works", "#ff7035", "SSH", 70, -58, 25, "sawtooth", [
+  venue("robotics", "Bot Works", "#ff7035", "HTTP", 70, -58, 25, "sawtooth", [
     floor(
       "Assembly line",
       "assembly",
@@ -472,6 +473,8 @@ export interface Resident {
   look: number;
   greeting: string;
   phrase: string;
+  /** Always present on this floor of their home building, besides walking the streets. */
+  floor?: number;
 }
 export const residents: Resident[] = [
   {
@@ -592,6 +595,17 @@ export const residents: Resident[] = [
     greeting:
       "Three deliveries left. Then I'm taking my coffee up to the hotel roof.",
     phrase: "Just passing through.",
+  },
+  {
+    id: "david-lisnard",
+    name: "David Lisnard",
+    role: "Mayor of Honeyrizons",
+    home: "tower",
+    look: MAYOR_LOOK,
+    greeting:
+      "Bienvenue à Honeyrizons ! Every service has its own building here, and I like to know who knocks on each door.",
+    phrase: "Bonjour !",
+    floor: 0,
   },
 ];
 const newHosts: [BuildingId, string, string, string][] = [
@@ -731,21 +745,29 @@ export type Inspection =
       text: string;
       action?: "coffee" | "record" | "water";
     };
+/** Pointer position and canvas size, in pixels relative to the canvas. */
 export interface HoverTarget {
   label: string;
   x: number;
   y: number;
+  width: number;
+  height: number;
 }
 export function roomResidents(room: RoomLocation): Resident[] {
   const primary = residents.find((r) => r.home === room.building)!;
   const start =
     buildings.findIndex((b) => b.id === room.building) + room.floor * 3;
+  const regulars = residents.filter((r) => r.home === room.building && r.floor === room.floor);
   return [
+    ...regulars,
     primary,
     residents[(start + 4) % residents.length],
     residents[(start + 7) % residents.length],
     residents[(start + 10) % residents.length],
-  ].filter((r, i, a) => a.findIndex((o) => o.id === r.id) === i);
+  ]
+    .filter((r, i, a) => a.findIndex((o) => o.id === r.id) === i)
+    // Interiors lay out four spots.
+    .slice(0, 4);
 }
 export function replyTo(
   resident: Resident,
@@ -755,7 +777,7 @@ export function replyTo(
   if (topic === "place")
     return `${b.name} is my usual spot. ${b.floors[0].description} Click its door when you're outside, or find it in Places.`;
   if (topic === "activity")
-    return `Around here, ${b.protocol} visitors head to ${b.name}. The activity feed shows their addresses and requests. These are demo sessions until the honeypot is connected.`;
+    return `Around here, ${b.district} visitors head to ${b.name}. The sessions page shows every address and request they leave behind.`;
   return [
     "Take a look upstairs in Honey Tower. Kai keeps city command open.",
     "Jun lets you put a record on at Side A. Start with the turntable.",

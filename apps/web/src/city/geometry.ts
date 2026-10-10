@@ -102,13 +102,13 @@ export class CityGeometry {
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
     let size = canvas.height / (lines.length * 1.7);
-    ctx.font = `600 ${size}px "IBM Plex Mono", monospace`;
+    ctx.font = `600 ${size}px "JetBrains Mono", monospace`;
     while (
       Math.max(...lines.map((line) => ctx.measureText(line).width)) > 470 &&
       size > 8
     ) {
       size -= 1;
-      ctx.font = `600 ${size}px "IBM Plex Mono", monospace`;
+      ctx.font = `600 ${size}px "JetBrains Mono", monospace`;
     }
     ctx.fillStyle = color;
     lines.forEach((line, i) =>

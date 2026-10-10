@@ -1,70 +1,48 @@
 import * as THREE from "three";
 import type { Resident } from "./explore";
+import { Figure, FigureFactory, styleForLook } from "./figure";
 
-import { characterCanvas } from "./portraits";
-
-export interface CitizenSprite {
+/** A resident in the 3D world: a voxel figure, its ground shadow, and the pick box that makes it clickable. */
+export interface Citizen {
   resident: Resident;
-  sprite: THREE.Sprite;
+  /** Position and heading live here; `userData` carries the pick data ({ kind, id, floor }). */
+  body: THREE.Group;
+  figure: Figure;
   shadow: THREE.Mesh;
-  frames: THREE.SpriteMaterial[];
 }
+
 export class CharacterArt {
-  private materials = new Map<number, THREE.SpriteMaterial[]>();
+  readonly figures = new FigureFactory();
   private shadowGeometry = new THREE.CircleGeometry(0.65, 16);
   private shadowMaterial = new THREE.MeshBasicMaterial({
-    color: "#233c50",
+    color: "#000000",
     transparent: true,
-    opacity: 0.18,
+    opacity: 0.22,
     depthWrite: false,
   });
   private labels = new Set<THREE.SpriteMaterial>();
-  create(
-    resident: Resident,
-    root: THREE.Group,
-    x = 0,
-    y = 0.55,
-    z = 0,
-  ): CitizenSprite {
-    let frames = this.materials.get(resident.look);
-    if (!frames) {
-      frames = [0, 1].map((frame) => {
-        const map = new THREE.CanvasTexture(
-          characterCanvas(resident.look, frame),
-        );
-        map.colorSpace = THREE.SRGBColorSpace;
-        map.magFilter = THREE.NearestFilter;
-        map.minFilter = THREE.NearestFilter;
-        map.generateMipmaps = false;
-        return new THREE.SpriteMaterial({
-          map,
-          alphaTest: 0.35,
-          transparent: false,
-          depthWrite: true,
-          toneMapped: false,
-        });
-      });
-      this.materials.set(resident.look, frames);
-    }
-    const sprite = new THREE.Sprite(frames[0]);
-    sprite.center.set(0.5, 0);
-    sprite.scale.set(1.65, 2.48, 1);
-    sprite.position.set(x, y, z);
-    sprite.userData = { kind: "resident", id: resident.id };
-    root.add(sprite);
+  create(resident: Resident, root: THREE.Group, x = 0, y = 0.55, z = 0, scale = 1.2): Citizen {
+    const figure = this.figures.create(styleForLook(resident.look), scale);
+    const body = figure.root;
+    body.position.set(x, y, z);
+    body.rotation.y = Math.PI / 4;
+    // The pick box and the body share one userData object, so `floor` set on either is visible to both.
+    body.userData = { kind: "resident", id: resident.id };
+    figure.hit.userData = body.userData;
+    root.add(body);
     const shadow = new THREE.Mesh(this.shadowGeometry, this.shadowMaterial);
     shadow.rotation.x = -Math.PI / 2;
-    shadow.scale.set(1, 0.6, 1);
+    shadow.scale.set(scale * 0.8, scale * 0.6, 1);
     shadow.position.set(x, y + 0.005, z);
     root.add(shadow);
-    return { resident, sprite, shadow, frames };
+    return { resident, body, figure, shadow };
   }
   bubble(text: string, root: THREE.Group, x: number, y: number, z: number) {
     const canvas = document.createElement("canvas");
     canvas.width = 512;
     canvas.height = 110;
     const c = canvas.getContext("2d")!;
-    c.font = '500 25px "DM Sans"';
+    c.font = '500 25px "Inter", sans-serif';
     c.fillStyle = "#1d4165";
     c.beginPath();
     c.roundRect(3, 3, 506, 84, 16);
@@ -109,12 +87,7 @@ export class CharacterArt {
     });
   }
   dispose() {
-    this.materials.forEach((frames) =>
-      frames.forEach((m) => {
-        m.map?.dispose();
-        m.dispose();
-      }),
-    );
+    this.figures.dispose();
     this.labels.forEach((m) => {
       m.map?.dispose();
       m.dispose();

@@ -1,5 +1,7 @@
 
 import {
+  lazy,
+  Suspense,
   useCallback,
   useEffect,
   useId,
@@ -7,6 +9,7 @@ import {
   useMemo,
   useRef,
   useState,
+  type ComponentType,
   type CSSProperties,
   type KeyboardEvent,
   type ReactNode,
@@ -19,9 +22,10 @@ import {
   type AnalyticsDashboardPage,
   type AnalyticsDashboardStatus,
 } from "@/components/analytics-dashboard/context";
+import type { IntelSnapshot } from "@honeyrizons/shared";
 import type { AnalyticsDashboardData } from "@/components/analytics-dashboard/data";
 import { SessionDetails, type Phase } from "@/components/analytics-dashboard/details";
-import { GlobeIcon, HomeIcon, PanelIcon, ServerIcon, SettingsIcon, TerminalIcon } from "@/components/analytics-dashboard/icons";
+import { CityIcon, HomeIcon, PanelIcon, ServerIcon, SettingsIcon, TerminalIcon } from "@/components/analytics-dashboard/icons";
 import { OverviewPage, ServicesPage, SessionsPage, SettingsPage } from "@/components/analytics-dashboard/pages";
 import "./analytics-dashboard.css";
 
@@ -33,15 +37,20 @@ const OVERLAY_WIDTH = 1180;
 const COMPACT_WIDTH = 760;
 const EXIT_MS = 150;
 
+// The city pulls in three.js, so it only loads when someone opens it.
+const CityPage = lazy(() => import("@/city/CityPage"));
+
 const NAV = [
   { page: "overview", label: "Overview", Icon: HomeIcon },
+  { page: "city", label: "City", Icon: CityIcon },
   { page: "services", label: "Services", Icon: ServerIcon },
   { page: "sessions", label: "Sessions", Icon: TerminalIcon },
   { page: "settings", label: "Settings", Icon: SettingsIcon },
 ] as const satisfies readonly { page: AnalyticsDashboardPage; label: string; Icon: typeof HomeIcon }[];
 
-const PAGES: Record<AnalyticsDashboardPage, () => ReactNode> = {
+const PAGES: Record<AnalyticsDashboardPage, ComponentType> = {
   overview: OverviewPage,
+  city: CityPage,
   services: ServicesPage,
   sessions: SessionsPage,
   settings: SettingsPage,
@@ -52,6 +61,8 @@ export interface AnalyticsDashboardProps {
   data: AnalyticsDashboardData;
   /** Live connection state shown in the sidebar and on the Settings page. */
   status: AnalyticsDashboardStatus;
+  /** Automatic triage results pushed by the API. */
+  intel: IntelSnapshot;
   /** Reference time for relative dates; tick it to keep "x min ago" fresh. */
   now: number;
   /** Product name and optional logo at the top of the sidebar. */
@@ -87,6 +98,7 @@ function useContainerWidth() {
 export function AnalyticsDashboard({
   data,
   status,
+  intel,
   now,
   brand = { name: "Honeyrizons" },
   page: pageProp,
@@ -201,6 +213,7 @@ export function AnalyticsDashboard({
     return {
       data,
       status,
+      intel,
       now,
       uid,
       selected,
@@ -209,7 +222,7 @@ export function AnalyticsDashboard({
       accent,
       setAccent,
     };
-  }, [data, status, now, uid, selected, shown, navigate, accent, setAccent]);
+  }, [data, status, intel, now, uid, selected, shown, navigate, accent, setAccent]);
 
   const activeIndex = NAV.findIndex((item) => item.page === page);
   const title = NAV[activeIndex]?.label ?? "";
@@ -251,12 +264,6 @@ export function AnalyticsDashboard({
             </button>
 
             {/* Back to the 3D city map served at the site root. */}
-            <a className="rail-btn press has-tip tip-right" data-tip="City map" aria-label="Back to the city map" href="/">
-              <GlobeIcon size={19} strokeWidth={1.7} className="rail-icon" />
-              <span className="rail-label" aria-hidden="true">
-                City map
-              </span>
-            </a>
 
             <div className="rail-nav" style={{ "--active": Math.max(0, activeIndex) } as CSSProperties}>
               <span className="rail-indicator" aria-hidden="true" data-hidden={activeIndex < 0} />
@@ -340,7 +347,9 @@ export function AnalyticsDashboard({
             <div className="main-scroll" ref={scrollRef}>
               {/* Keyed by page so every page swap replays its entrance stagger. */}
               <div key={page} className="page">
-                <Page />
+                <Suspense fallback={null}>
+                  <Page />
+                </Suspense>
               </div>
             </div>
           </main>

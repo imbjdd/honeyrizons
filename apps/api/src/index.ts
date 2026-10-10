@@ -1,8 +1,10 @@
 // Tails the beelzebub JSON log and exposes events over HTTP + Server-Sent Events.
 import { existsSync, statSync, openSync, readSync, closeSync, readdirSync, readFileSync } from "node:fs";
-import { join, resolve } from "node:path";
+import { dirname, join, resolve } from "node:path";
 import geoip from "geoip-lite";
 import { sourceIp, type GeoLocation, type HoneypotEvent, type HoneypotService } from "@honeyrizons/shared";
+import { ANALYST_MODEL, analystEnabled } from "./analyst";
+import { startIntel } from "./intel";
 
 const LOG_PATH = resolve(process.env.LOG_PATH ?? join(import.meta.dir, "../../../logs/beelzebub.log"));
 const PORT = Number(process.env.PORT ?? 4000);
@@ -44,7 +46,11 @@ function ingest(line: string) {
   if (geo) entry.event.Geo = geo;
   events.push(entry.event);
   if (events.length > MAX_EVENTS) events.splice(0, events.length - MAX_EVENTS);
-  const payload = encoder.encode(`data: ${JSON.stringify(entry.event)}\n\n`);
+  broadcast(`data: ${JSON.stringify(entry.event)}\n\n`);
+}
+
+function broadcast(message: string) {
+  const payload = encoder.encode(message);
   for (const c of clients) {
     try {
       c.enqueue(payload);
@@ -93,6 +99,12 @@ function readServices(): HoneypotService[] {
     });
 }
 
+const intel = startIntel({
+  events: () => events,
+  publish: (patch) => broadcast(`event: intel\ndata: ${JSON.stringify(patch)}\n\n`),
+  storePath: join(dirname(LOG_PATH), "intel.json"),
+});
+
 // Keep SSE connections alive through proxies.
 setInterval(() => {
   const ping = encoder.encode(": ping\n\n");
@@ -133,6 +145,10 @@ Bun.serve({
       });
     }
 
+    if (url.pathname === "/api/intel") {
+      return Response.json(intel.snapshot());
+    }
+
     if (url.pathname === "/api/services") {
       return Response.json(readServices());
     }
@@ -144,6 +160,7 @@ Bun.serve({
         logExists: existsSync(LOG_PATH),
         events: events.length,
         location: { lat: HOME_LAT, lon: HOME_LON },
+        analyst: { enabled: analystEnabled(), model: ANALYST_MODEL },
       });
     }
 

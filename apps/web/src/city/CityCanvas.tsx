@@ -16,8 +16,10 @@ export default function CityCanvas({
 
   useEffect(() => {
     let cancelled = false;
-    // Load Three.js separately from the interface and wait for fonts used in signs.
-    Promise.all([import("./CityScene"), document.fonts.ready])
+    // Load Three.js separately from the interface. Signs and speech bubbles are drawn on canvases,
+    // which never trigger a web font download by themselves, so request those faces explicitly.
+    const fonts = Promise.all([document.fonts.load('600 16px "JetBrains Mono"'), document.fonts.load('500 16px "Inter"')]);
+    Promise.all([import("./CityScene"), fonts])
       .then(([{ CityScene }]) => {
         if (cancelled || !canvas.current) return;
         try {

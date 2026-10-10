@@ -29,7 +29,7 @@ export default function RoomHud({
   function control(action: WalkAction, label: string, icon: ReactNode) {
     return (
       <button
-        className={`walk-${action}`}
+        className={`city-walk-${action}`}
         aria-label={label}
         disabled={blocked}
         onPointerDown={(event) => {
@@ -54,14 +54,14 @@ export default function RoomHud({
     );
   }
   return (
-    <div className={`room-game-hud${blocked ? " is-blocked" : ""}`}>
+    <div className={`city-walk${blocked ? " is-blocked" : ""}`}>
       <div
-        className={`room-crosshair${nearby ? " has-target" : ""}`}
+        className={`city-crosshair${nearby ? " has-target" : ""}`}
         aria-hidden="true"
       >
         <i />
       </div>
-      <div className="walk-hint glass">
+      <div className="city-panel city-walk-hint">
         <span>
           <kbd>W A S D</kbd> walk
         </span>
@@ -70,6 +70,8 @@ export default function RoomHud({
           <kbd>E</kbd> interact
         </span>
         <button
+          type="button"
+          className="btn press"
           onClick={() => city.current?.lockLook()}
           disabled={blocked}
           title="Free mouse look. Escape releases the mouse."
@@ -77,7 +79,7 @@ export default function RoomHud({
           <MousePointer2 size={14} /> Free look
         </button>
       </div>
-      <div className="walk-pad" aria-label="Walking controls">
+      <div className="city-walk-pad" aria-label="Walking controls">
         {control("forward", "Walk forward", <ArrowUp size={22} />)}
         {control("left", "Walk left", <ArrowLeft size={22} />)}
         {control("backward", "Walk backward", <ArrowDown size={22} />)}
@@ -85,14 +87,15 @@ export default function RoomHud({
       </div>
       {nearby && !blocked && (
         <button
-          className="nearby-action glass"
+          type="button"
+          className="city-panel city-nearby"
           onClick={() => city.current?.interact()}
         >
           <kbd>E</kbd>
           <span>{nearby}</span>
         </button>
       )}
-      <span className="touch-look-hint">Drag the room to look around</span>
+      <span className="city-touch-hint">Drag the room to look around</span>
     </div>
   );
 }

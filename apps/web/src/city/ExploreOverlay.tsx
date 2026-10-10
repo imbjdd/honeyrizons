@@ -11,7 +11,6 @@ import {
   X,
 } from "lucide-react";
 import {
-  buildings,
   getBuilding,
   residentById,
   replyTo,
@@ -23,7 +22,7 @@ import {
 } from "./explore";
 import RoomHud from "./RoomHud";
 import { portrait } from "./portraits";
-import type { CityHandle } from "./model";
+import { districtById, type CityHandle } from "./model";
 
 export default function ExploreOverlay({
   room,
@@ -52,7 +51,6 @@ export default function ExploreOverlay({
   >([]);
   const [ordered, setOrdered] = useState(false);
   const [recordPlaying, setRecordPlaying] = useState(false);
-  const [directory, setDirectory] = useState(false);
   const panel = useRef<HTMLElement>(null);
   const resident =
     inspection?.kind === "resident" ? residentById(inspection.id) : null;
@@ -64,7 +62,6 @@ export default function ExploreOverlay({
   }, [inspection]);
   useEffect(() => {
     setRecordPlaying(false);
-    setDirectory(false);
   }, [room]);
   useEffect(() => {
     if (!inspection) return;
@@ -139,30 +136,24 @@ export default function ExploreOverlay({
     <>
       {room && building && (
         <>
-          <section
-            className="room-navigation glass"
-            aria-label="Current building"
-          >
-            <button
-              className="street-return"
-              onClick={() => city.current?.exit()}
-            >
+          <section className="city-panel city-room" aria-label="Current building">
+            <button type="button" className="btn press city-room-exit" onClick={() => city.current?.exit()}>
               <ArrowLeft size={15} />
               Return to the street
             </button>
-            <div className="room-heading">
+            <div className="city-room-head">
               <DoorOpen size={21} style={{ color: building.color }} />
               <div>
                 <h1>{building.name}</h1>
                 <span lang="ja">{building.japanese}</span>
               </div>
             </div>
-            <details className="floor-menu" key={room.floor}>
+            <details className="city-floors" key={room.floor}>
               <summary>
                 {building.floors[room.floor].name}{" "}
                 <span>Floor {room.floor === 0 ? "G" : room.floor}</span>
               </summary>
-              <div className="floor-tabs" aria-label="Choose a floor">
+              <div className="city-floor-list" aria-label="Choose a floor">
                 {building.floors.map((floor, i) => (
                   <button
                     key={floor.name}
@@ -178,7 +169,7 @@ export default function ExploreOverlay({
             <p>{building.floors[room.floor].description}</p>
           </section>
           <RoomHud city={city} nearby={nearby} blocked={!!inspection} />
-          <div className="room-people glass" aria-label="People in this room">
+          <div className="city-panel city-people" aria-label="People in this room">
             <span>In here</span>
             {roomResidents(room).map((person) => (
               <button
@@ -194,57 +185,20 @@ export default function ExploreOverlay({
         </>
       )}
       {following && !room && (
-        <div className="following-bar glass">
+        <div className="city-panel city-following">
           <Navigation size={15} />
           <span>Following {residentById(following).name}</span>
-          <button onClick={() => city.current?.follow(null)}>
+          <button type="button" className="btn press" onClick={() => city.current?.follow(null)}>
             Stop <X size={13} />
           </button>
         </div>
       )}
-      {!room && (
-        <button
-          className="explore-shops glass"
-          onClick={() => setDirectory((v) => !v)}
-          aria-expanded={directory}
-        >
-          <DoorOpen size={15} />
-          Explore buildings <span>{buildings.length}</span>
-        </button>
-      )}
-      {directory && !room && (
-        <section
-          className="shop-directory glass"
-          aria-label="Explore buildings"
-        >
-          <header>
-            <h2>Step inside</h2>
-            <button
-              aria-label="Close building directory"
-              onClick={() => setDirectory(false)}
-            >
-              <X size={16} />
-            </button>
-          </header>
-          <p>Click a storefront, or choose a door here.</p>
-          {buildings.map((b) => (
-            <button key={b.id} onClick={() => enter(b.id)}>
-              <i style={{ background: b.color }} />
-              <span>
-                {b.name}
-                <small>{b.floors[0].name}</small>
-              </span>
-              <DoorOpen size={15} />
-            </button>
-          ))}
-        </section>
-      )}
       {hover && !inspection && (
         <div
-          className="scene-tooltip"
+          className="city-tooltip"
           style={{
-            left: Math.min(hover.x + 14, window.innerWidth - 250),
-            top: Math.min(hover.y + 18, window.innerHeight - 60),
+            left: Math.min(hover.x + 14, hover.width - 240),
+            top: Math.min(hover.y + 18, hover.height - 48),
           }}
         >
           {hover.label}
@@ -252,23 +206,19 @@ export default function ExploreOverlay({
       )}
       {inspection && (
         <aside
-          className="resident-panel glass"
+          className="city-panel city-inspector"
           ref={panel}
           tabIndex={-1}
           aria-labelledby="inspection-title"
         >
-          <button
-            className="close-button"
-            aria-label="Close inspection"
-            onClick={close}
-          >
+          <button type="button" className="icon-btn press city-inspector-close" aria-label="Close" onClick={close}>
             <X size={17} />
           </button>
           {resident ? (
             <>
-              <header className="resident-heading">
+              <header className="city-person">
                 <div
-                  className="pixel-portrait"
+                  className="city-portrait"
                   style={{
                     background: getBuilding(resident.home).color + "38",
                   }}
@@ -284,15 +234,15 @@ export default function ExploreOverlay({
                   <p>{getBuilding(resident.home).name}</p>
                 </div>
               </header>
-              <p className="resident-greeting">"{resident.greeting}"</p>
-              <dl className="resident-facts">
+              <p className="city-greeting">"{resident.greeting}"</p>
+              <dl className="city-facts">
                 <div>
                   <dt>Usual spot</dt>
                   <dd>{getBuilding(resident.home).name}</dd>
                 </div>
                 <div>
                   <dt>District</dt>
-                  <dd>{getBuilding(resident.home).protocol}</dd>
+                  <dd>{districtById(getBuilding(resident.home).district).name}</dd>
                 </div>
                 <div>
                   <dt>Today</dt>
@@ -301,9 +251,10 @@ export default function ExploreOverlay({
                   </dd>
                 </div>
               </dl>
-              <div className="resident-actions">
+              <div className="city-actions">
                 <button
-                  className="primary-button"
+                  type="button"
+                  className="btn btn-primary press"
                   onClick={() => setTalking((v) => !v)}
                   aria-expanded={talking}
                 >
@@ -312,7 +263,8 @@ export default function ExploreOverlay({
                 </button>
                 {!room && (
                   <button
-                    className="secondary-button"
+                    type="button"
+                    className="btn press"
                     onClick={() =>
                       city.current?.follow(
                         following === resident.id ? null : resident.id,
@@ -325,21 +277,21 @@ export default function ExploreOverlay({
                 )}
               </div>
               {talking && (
-                <div className="resident-conversation">
-                  <div className="conversation-history" aria-live="polite">
+                <div className="city-conversation">
+                  <div className="city-conversation-history" aria-live="polite">
                     {conversation.map((turn, i) => (
                       <div key={i}>
-                        <span className="conversation-question">
+                        <span className="city-conversation-question">
                           {turn.question}
                         </span>
                         <p>{turn.answer}</p>
                       </div>
                     ))}
                   </div>
-                  <span className="conversation-prompt">
+                  <span className="ai-label">
                     Ask {resident.name}
                   </span>
-                  <div className="conversation-choices">
+                  <div className="city-conversation-choices">
                     {(
                       [
                         { id: "place", text: "Tell me about this place" },
@@ -364,12 +316,12 @@ export default function ExploreOverlay({
                       </button>
                     ))}
                   </div>
-                  <small>Local demo conversation</small>
                 </div>
               )}
               {!room && (
                 <button
-                  className="resident-home"
+                  type="button"
+                  className="link-more city-home-link"
                   onClick={() => enter(resident.home)}
                 >
                   Enter {getBuilding(resident.home).name}
@@ -380,7 +332,7 @@ export default function ExploreOverlay({
           ) : (
             inspection.kind === "prop" && (
               <>
-                <div className="object-symbol">
+                <div className="city-object-icon">
                   {inspection.action === "coffee" ? (
                     <Coffee size={28} />
                   ) : inspection.action === "record" ? (
@@ -392,10 +344,11 @@ export default function ExploreOverlay({
                   )}
                 </div>
                 <h2 id="inspection-title">{inspection.title}</h2>
-                <p className="object-description">{inspection.text}</p>
+                <p className="city-object-text">{inspection.text}</p>
                 {inspection.action && (
                   <button
-                    className="primary-button"
+                    type="button"
+                    className="btn btn-primary press"
                     onClick={action}
                     disabled={ordered}
                   >
@@ -413,7 +366,7 @@ export default function ExploreOverlay({
                   </button>
                 )}
                 {inspection.action === "record" && recordPlaying && muted && (
-                  <p className="quiet-note">Turn on Sound to listen.</p>
+                  <p className="ai-hint">Turn on Sound to listen.</p>
                 )}
               </>
             )

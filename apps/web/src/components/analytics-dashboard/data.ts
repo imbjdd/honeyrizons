@@ -1,4 +1,19 @@
-import { type HoneypotEvent, type HoneypotService, protocolColor, sourceIp } from "@honeyrizons/shared";
+import {
+  buildSessions,
+  type AnalyticsSession,
+  type HoneypotEvent,
+  type HoneypotService,
+  protocolColor,
+  sourceIp,
+} from "@honeyrizons/shared";
+
+export {
+  formatToolCall,
+  sessionTitle,
+  type AnalyticsInteraction,
+  type AnalyticsSession,
+  type AnalyticsSessionStatus,
+} from "@honeyrizons/shared";
 
 export type AnalyticsRange = { id: RangeId; label: string; caption: string };
 
@@ -11,8 +26,8 @@ export type AnalyticsKpi = {
   label: string;
   icon: AnalyticsKpiIcon;
   value: string;
-  /** Percent change against the previous period of the same length. */
-  delta: number;
+  /** Percent change against the previous period of the same length; null when that period is too small to compare. */
+  delta: number | null;
   spark: number[];
 };
 
@@ -56,26 +71,6 @@ export type AnalyticsService = HoneypotService & {
   activity: number[];
 };
 
-export type AnalyticsSessionStatus = { kind: "merged" | "review" | "open" | "agent"; label: string };
-
-export type AnalyticsInteraction = { input: string; output: string; time: number };
-
-export type AnalyticsSession = {
-  key: string;
-  protocol: string;
-  service: string;
-  ip: string;
-  country: string;
-  user: string;
-  client: string;
-  start: number;
-  end: number;
-  status: AnalyticsSessionStatus;
-  creds: { user: string; password: string }[];
-  interactions: AnalyticsInteraction[];
-  events: HoneypotEvent[];
-};
-
 export type AnalyticsDashboardData = {
   ranges: AnalyticsRange[];
   kpis: Record<RangeId, AnalyticsKpi[]>;
@@ -99,7 +94,9 @@ const RANGE_SPECS: Record<RangeId, { label: string; span: number; buckets: numbe
   week: { label: "7 days", span: 7 * 24 * HOUR, buckets: 7, sparkBuckets: 14 },
 };
 
-const ATTACKER_COLORS = ["#f08a3c", "#9d8df5", "#2fd06f", "#4c9bff", "#f2b54a", "#e5484d", "#2fd0b5", "#d67ad8"];
+export const rangeStart = (range: RangeId, now: number) => now - RANGE_SPECS[range].span;
+
+const ATTACKER_COLORS = ["#f08a3c", "#2fd06f", "#4c9bff", "#f2b54a", "#e5484d", "#2fd0b5"];
 
 export function attackerColor(ip: string) {
   let h = 0;
@@ -108,78 +105,6 @@ export function attackerColor(ip: string) {
 }
 
 const time = (e: HoneypotEvent) => Date.parse(e.DateTime);
-
-/** A stateless burst (scan, brute force, agent run) ends after this much silence from the same attacker. */
-const STATELESS_GAP_MS = 10 * 60_000;
-
-/** Stateless events (HTTP requests, SSH password attempts, MCP tool calls) each get their own ID, so group them per attacker and service. */
-function sessionKey(e: HoneypotEvent) {
-  return e.Status === "Stateless" ? `${e.Protocol}|${sourceIp(e)}|${e.Description}` : e.ID;
-}
-
-function buildSessions(events: HoneypotEvent[], now: number): AnalyticsSession[] {
-  const open = new Map<string, AnalyticsSession>();
-  const all: AnalyticsSession[] = [];
-  // The log is in append order, which isn't chronological once demo data is mixed in.
-  const sorted = [...events].sort((a, b) => time(a) - time(b));
-  for (const e of sorted) {
-    const group = sessionKey(e);
-    const t = time(e);
-    let s = open.get(group);
-    if (s && e.Status === "Stateless" && t - s.end > STATELESS_GAP_MS) s = undefined;
-    if (!s) {
-      const key = `${group}|${t}`;
-      s = {
-        key,
-        protocol: e.Protocol,
-        service: e.Description,
-        ip: sourceIp(e),
-        country: e.Geo?.country ?? "",
-        user: e.User,
-        client: e.UserAgent || e.Client,
-        start: t,
-        end: t,
-        status: { kind: "review", label: "" },
-        creds: [],
-        interactions: [],
-        events: [],
-      };
-      open.set(group, s);
-      all.push(s);
-    }
-    s.events.push(e);
-    s.end = Math.max(s.end, t);
-    s.service ||= e.Description;
-    s.ip ||= sourceIp(e);
-    s.user ||= e.User;
-    s.country ||= e.Geo?.country ?? "";
-    s.client ||= e.UserAgent || e.Client;
-    if (e.Password) s.creds.push({ user: e.User, password: e.Password });
-    if (e.Status === "Interaction" || e.Status === "Stateless") {
-      const input = e.Protocol === "HTTP" ? `${e.HTTPMethod} ${e.RequestURI}` : e.Protocol === "MCP" ? formatToolCall(e.Command) : e.Command;
-      if (input) s.interactions.push({ input, output: e.CommandOutput, time: t });
-    }
-  }
-
-  for (const s of all) {
-    const stateless = s.events.every((e) => e.Status === "Stateless");
-    const ended = s.events.some((e) => e.Status === "End");
-    if (stateless) {
-      s.status =
-        s.protocol === "MCP"
-          ? { kind: "agent", label: "AI agent" }
-          : s.protocol === "HTTP"
-            ? { kind: "review", label: "Scan" }
-            : { kind: "review", label: "Brute force" };
-    } else if (ended || now - s.end > 10 * 60_000) {
-      s.status = { kind: "merged", label: "Closed" };
-    } else {
-      s.status = { kind: "open", label: "Active" };
-    }
-  }
-
-  return all.sort((a, b) => b.end - a.end);
-}
 
 function bucketize(events: HoneypotEvent[], from: number, to: number, n: number) {
   const out = new Array(n).fill(0);
@@ -192,8 +117,11 @@ function bucketize(events: HoneypotEvent[], from: number, to: number, n: number)
   return out;
 }
 
+/** Below this, a percentage against the previous period is noise ("+3900%"). */
+const MIN_COMPARABLE = 10;
+
 function percentDelta(current: number, previous: number) {
-  if (previous === 0) return current === 0 ? 0 : 100;
+  if (previous < MIN_COMPARABLE) return null;
   return Math.round(((current - previous) / previous) * 100);
 }
 
@@ -363,32 +291,6 @@ export function countryName(code: string) {
   }
 }
 
-
-export function sessionTitle(s: AnalyticsSession) {
-  const user = s.user || s.creds.at(-1)?.user;
-  const n = s.interactions.length;
-  if (s.protocol === "HTTP") return `${n} HTTP request${n > 1 ? "s" : ""} to ${s.service}`;
-  if (s.protocol === "MCP") {
-    const tools = [...new Set(s.interactions.map((i) => i.input.split("(")[0]))];
-    return `${n} tool call${n > 1 ? "s" : ""} · ${tools.slice(0, 2).join(", ")}${tools.length > 2 ? ` +${tools.length - 2}` : ""}`;
-  }
-  if (s.status.label === "Brute force") return `${s.creds.length} login attempt${s.creds.length > 1 ? "s" : ""} on ${s.service}`;
-  if (n === 0) return `${s.protocol} login${user ? ` as ${user}` : ""}, no commands`;
-  const first = s.interactions[0].input;
-  return `${user ? `${user}@` : ""}${s.protocol.toLowerCase()} · ${first}${n > 1 ? ` +${n - 1}` : ""}`;
-}
-
-/** Beelzebub logs MCP calls as `tool|map[key:value key2:value2]` (Go's map formatting). */
-export function formatToolCall(command: string) {
-  const sep = command.indexOf("|");
-  if (sep < 0) return command;
-  const tool = command.slice(0, sep);
-  const args = command
-    .slice(sep + 1)
-    .replace(/^map\[|\]$/g, "")
-    .trim();
-  return `${tool}(${args})`;
-}
 
 export function relativeTime(t: number, now = Date.now()) {
   const s = Math.max(0, Math.round((now - t) / 1000));

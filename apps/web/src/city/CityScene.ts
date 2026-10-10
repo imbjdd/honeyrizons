@@ -17,12 +17,8 @@ import {
   type BuildingId,
   type RoomLocation,
 } from "./explore";
-import {
-  districts,
-  type CityHandle,
-  type CityOptions,
-  type Protocol,
-} from "./model";
+import type { CityHandle, CityOptions } from "./model";
+import { AttackerCrowd, SEVERITY_GLOW, type AttackerSpec } from "./attackers";
 
 export class CityScene implements CityHandle {
   private scene = new THREE.Scene();
@@ -61,6 +57,7 @@ export class CityScene implements CityHandle {
   private renderer: THREE.WebGLRenderer;
   private controls: OrbitControls;
   private world: CityWorld;
+  private crowd: AttackerCrowd;
   private sun = new THREE.DirectionalLight(0xfff1d5, 2.6);
   private ambient = new THREE.HemisphereLight(0xe8eff4, 0xa99a79, 2);
   private composer: EffectComposer;
@@ -87,7 +84,8 @@ export class CityScene implements CityHandle {
     this.renderer = new THREE.WebGLRenderer({
       canvas,
       antialias: true,
-      alpha: false,
+      // Transparent, so the dashboard's own background shows behind the city instead of an approximated color.
+      alpha: true,
       preserveDrawingBuffer: true,
       powerPreference: "high-performance",
     });
@@ -136,6 +134,8 @@ export class CityScene implements CityHandle {
     this.scene.fog = new THREE.Fog(0xdde3e1, 175, 330);
     this.scene.add(this.outdoor);
     this.world = buildWorld(this.outdoor);
+    this.crowd = new AttackerCrowd(this.outdoor, this.world.art.figures);
+    this.gradeToDashboard(this.outdoor);
     this.selection.rotation.x = -Math.PI / 2;
     this.selection.visible = false;
     this.scene.add(this.selection);
@@ -166,77 +166,60 @@ export class CityScene implements CityHandle {
   }
 
   update(options: CityOptions) {
-    const changed = this.options.theme !== options.theme;
     this.options = options;
     this.dirty = true;
-    this.applyDaylight(
-      this.displayedPhase < 0 ? options.dayPhase : this.displayedPhase,
-    );
-    this.world.overlays.forEach((overlay) => {
-      overlay.visible =
-        options.view === "protocols" || options.view === "threats";
-      (overlay.material as THREE.MeshBasicMaterial).opacity =
-        options.view === "threats" ? 0.13 : 0.3;
-    });
-    this.world.actors.forEach((actor) => {
-      actor.mesh.visible = options.view !== "traffic" || !actor.pedestrian;
-    });
+    this.applyLighting();
     if (this.walker) {
       this.walker.enabled = !options.inputBlocked && !options.paused;
       if (!this.walker.enabled && document.pointerLockElement === this.canvas)
         void document.exitPointerLock();
     }
-    this.world.bubbles.forEach(
-      ({ bubble }) => (bubble.visible = options.view !== "traffic"),
-    );
     if (options.reducedMotion) this.touring = false;
-    if (changed) this.renderer.shadowMap.needsUpdate = true;
   }
 
-  private displayedPhase = -1;
-  private applyDaylight(phase: number) {
-    const angle = (phase - 0.25) * Math.PI * 2;
-    const elevation = Math.sin(angle);
-    const daylight = THREE.MathUtils.smoothstep(elevation, -0.14, 0.35);
-    const twilight = (1 - Math.abs(daylight * 2 - 1)) * 0.75;
-    const sky = new THREE.Color("#091a3b")
-      .lerp(new THREE.Color("#9bcbe9"), daylight)
-      .lerp(new THREE.Color("#ff9f92"), twilight);
-    this.scene.background = sky;
-    if (this.scene.fog instanceof THREE.Fog) this.scene.fog.color.copy(sky);
-    this.ambient.color
-      .set("#9cb6f5")
-      .lerp(new THREE.Color("#e9f7ff"), daylight);
-    this.ambient.groundColor
-      .set("#3e5389")
-      .lerp(new THREE.Color("#acc8de"), daylight);
-    this.ambient.intensity = this.interior ? 1.8 : 0.65 + daylight * 1.05;
-    this.sun.color
-      .set("#9ec8ff")
-      .lerp(new THREE.Color("#fff5df"), daylight)
-      .lerp(new THREE.Color("#ffad72"), twilight);
-    this.sun.intensity = this.interior
-      ? 1.3 + daylight * 0.7
-      : 0.32 + daylight * 2.35;
-    this.sun.position.set(
-      Math.cos(angle) * 70,
-      25 + Math.max(0, elevation) * 85,
-      45,
-    );
+  /**
+   * A fixed night, graded to the dashboard: charcoal sky and neutral light, so the city sits in the page instead of
+   * floating in a blue box. Neon, windows and district lights carry the color.
+   */
+  private applyLighting() {
+    // No sky: the canvas is transparent. Fog fades distant geometry toward the dashboard panel's midpoint color.
+    this.scene.background = null;
+    this.renderer.setClearColor(0x000000, 0);
+    if (this.scene.fog instanceof THREE.Fog) this.scene.fog.color.set("#181816");
+    this.ambient.color.set("#cfccc5");
+    this.ambient.groundColor.set("#2d2b27");
+    this.ambient.intensity = this.interior ? 1.8 : 0.8;
+    this.sun.color.set("#e2ddd2");
+    this.sun.intensity = this.interior ? 1.3 : 0.4;
+    this.sun.position.set(-20, 60, 45);
     this.renderer.toneMappingExposure = 1.02;
-    const darkness = 1 - daylight;
     [this.world.geometry, ...(this.interior?.geometries ?? [])].forEach((geo) =>
       geo.windows.forEach((m) => {
-        m.emissiveIntensity = 0.16 + darkness * 1.55;
+        m.emissiveIntensity = 1.6;
       }),
     );
     this.world.nightLights.forEach((light) => {
-      light.intensity = darkness * 28;
+      light.intensity = 28;
     });
-    this.world.nightProps.visible = darkness > 0.12;
-    this.bloom.strength = 0.16 + darkness * 0.23;
-    this.displayedPhase = phase;
+    this.world.nightProps.visible = true;
+    this.bloom.strength = 0.36;
     this.renderer.shadowMap.needsUpdate = true;
+  }
+
+  /** Pulls the outdoor architecture toward the dashboard's neutral greys; glowing materials keep their color. */
+  private gradeToDashboard(root: THREE.Object3D) {
+    const seen = new Set<THREE.Material>();
+    const hsl = { h: 0, s: 0, l: 0 };
+    root.traverse((object) => {
+      if (!(object instanceof THREE.Mesh)) return;
+      for (const material of [object.material].flat()) {
+        if (seen.has(material) || !(material instanceof THREE.MeshStandardMaterial)) continue;
+        seen.add(material);
+        if (material.emissiveIntensity > 0 && material.emissive.getHex() !== 0) continue;
+        material.color.getHSL(hsl);
+        material.color.setHSL(hsl.h, hsl.s * 0.18, hsl.l * 0.88);
+      }
+    });
   }
 
   zoom(direction: number) {
@@ -265,18 +248,13 @@ export class CityScene implements CityHandle {
     this.targetZoom = 1;
     this.angle = Math.atan2(85, 104);
   }
-  focus(protocol: Protocol) {
+  focus(id: BuildingId) {
     if (this.room) this.exit();
     this.follow(null);
-    const district = districts.find((d) => d.id === protocol)!;
+    const [x, , z] = getBuilding(id).position;
     this.touring = false;
-    this.target = new THREE.Vector3(
-      district.position[0],
-      4,
-      district.position[2],
-    );
+    this.target = new THREE.Vector3(x, 4, z + 8);
     this.targetZoom = 1.55;
-    this.pulse(protocol);
   }
   tour(enabled: boolean) {
     if (enabled && this.room) this.exit();
@@ -287,20 +265,36 @@ export class CityScene implements CityHandle {
       this.target = new THREE.Vector3(-3, 9, 0);
     }
   }
-  pulse(protocol: Protocol) {
-    const district = districts.find((d) => d.id === protocol)!;
-    this.world.beacon.position.set(
-      district.position[0],
-      0,
-      district.position[2] + 9,
+  /** Rings at a building's door, in the given color (an attacker's severity). */
+  pulse(id: BuildingId, color: string = SEVERITY_GLOW.medium) {
+    const building = getBuilding(id);
+    const [x, , z] = building.position;
+    this.world.beacon.position.set(x, 0, z + building.exterior.depth / 2 + 2);
+    this.world.beacon.children.forEach((ring) =>
+      (ring as THREE.Mesh<THREE.RingGeometry, THREE.MeshBasicMaterial>).material.color.set(color),
     );
-    (
-      this.world.beacon.children[0] as THREE.Mesh<
-        THREE.RingGeometry,
-        THREE.MeshBasicMaterial
-      >
-    ).material.color.set(district.color);
     this.pulseTime = this.elapsed;
+  }
+
+  setAttackers(attackers: AttackerSpec[]) {
+    this.crowd.sync(attackers);
+    this.dirty = true;
+  }
+
+  highlightAttacker(id: string | null) {
+    this.crowd.highlight(id);
+    this.dirty = true;
+  }
+
+  private projected = new THREE.Vector3();
+  project(id: BuildingId) {
+    if (this.room) return null;
+    const building = getBuilding(id);
+    const [x, , z] = building.position;
+    this.projected.set(x, building.exterior.height + 3, z).project(this.camera);
+    if (this.projected.z > 1) return null;
+    const rect = this.canvas.getBoundingClientRect();
+    return { x: ((this.projected.x + 1) / 2) * rect.width, y: ((1 - this.projected.y) / 2) * rect.height };
   }
 
   enter(building: BuildingId, floor = 0) {
@@ -421,10 +415,10 @@ export class CityScene implements CityHandle {
     const person = (this.interior?.people ?? this.world.people).find(
       (p) =>
         p.resident.id === id &&
-        (!this.room || p.sprite.userData.floor === this.room.floor),
+        (!this.room || p.body.userData.floor === this.room.floor),
     );
     if (person && this.walker && this.room) {
-      const position = person.sprite.getWorldPosition(new THREE.Vector3());
+      const position = person.body.getWorldPosition(new THREE.Vector3());
       if (this.walker.camera.position.distanceTo(position) > 5) {
         const nav = this.walker.navigation;
         // Find a clear point beside the resident rather than inside their counter.
@@ -448,12 +442,17 @@ export class CityScene implements CityHandle {
         this.walker.navigation.position.x - position.x,
         this.walker.navigation.position.z - position.z,
       );
+      // And they turn to face you.
+      person.figure.face(
+        this.walker.navigation.position.x - position.x,
+        this.walker.navigation.position.z - position.z,
+      );
       this.walker.navigation.pitch = 0;
       this.walker.release();
       this.walker.update(0);
     }
     if (person && !this.interior) {
-      this.target = person.sprite.position
+      this.target = person.body.position
         .clone()
         .add(new THREE.Vector3(0, 3, 0));
       this.targetZoom = 2.7;
@@ -477,7 +476,7 @@ export class CityScene implements CityHandle {
     if (!this.interior) return;
     if (action === "record") this.recordPlaying = !this.recordPlaying;
     const person = this.interior.people.find(
-      (p) => p.sprite.userData.floor === this.room?.floor,
+      (p) => p.body.userData.floor === this.room?.floor,
     )!;
     this.world.art.release(this.interior.root);
     this.world.art.bubble(
@@ -488,10 +487,10 @@ export class CityScene implements CityHandle {
           : this.recordPlaying
             ? "Good choice. Side A it is."
             : "I'll put the needle away.",
-      person.sprite.parent as THREE.Group,
-      person.sprite.position.x,
+      person.body.parent as THREE.Group,
+      person.body.position.x,
       2.75,
-      person.sprite.position.z,
+      person.body.position.z,
     );
     this.dirty = true;
   }
@@ -515,7 +514,7 @@ export class CityScene implements CityHandle {
         const url = URL.createObjectURL(blob);
         const link = document.createElement("a");
         link.href = url;
-        link.download = `honeyrizons-${this.options.theme}-${Date.now()}.png`;
+        link.download = `honeyrizons-city-${Date.now()}.png`;
         link.click();
         this.options.onPhotoSaved();
         setTimeout(() => URL.revokeObjectURL(url), 1000);
@@ -552,6 +551,7 @@ export class CityScene implements CityHandle {
   private activate(hit: THREE.Object3D) {
     const data = hit.userData;
     if (data.kind === "resident") this.inspect(data.id);
+    else if (data.kind === "attacker") this.options.onAttacker(data.id);
     else if (data.kind === "building") this.enter(data.id);
     else if (data.kind === "exit") this.exit();
     else if (data.kind === "prop") {
@@ -598,7 +598,9 @@ export class CityScene implements CityHandle {
   };
   private label(hit: THREE.Object3D | null) {
     const d = hit?.userData;
-    return d?.kind === "resident"
+    return d?.kind === "attacker"
+      ? d.label
+      : d?.kind === "resident"
       ? `Talk to ${residentById(d.id).name}`
       : d?.kind === "building"
         ? `Enter ${d.label}`
@@ -617,10 +619,14 @@ export class CityScene implements CityHandle {
       );
     } else this.pointer.set(0, 0);
     this.raycaster.setFromCamera(this.pointer, this.activeCamera);
+    if (!this.interior) {
+      const marker = this.raycaster.intersectObjects(this.crowd.markerPicks, false)[0];
+      if (marker) return marker.object;
+    }
     const objects =
       this.interior?.picks.filter(
         (p) => p.userData.floor === this.room?.floor,
-      ) ?? this.world.picks;
+      ) ?? [...this.world.picks, ...this.crowd.picks];
     for (const hit of this.raycaster.intersectObjects(objects, false)) {
       if (!hit.object.visible || (this.walker && hit.distance > 5.5)) continue;
       // Furniture and walls hide interactions behind them. Pick boxes surround their own objects.
@@ -676,8 +682,12 @@ export class CityScene implements CityHandle {
     const hit = this.pick(event);
     this.canvas.style.cursor = hit ? "pointer" : "grab";
     const label = this.label(hit);
+    // Relative to the canvas, so overlays can position the tooltip wherever the city is mounted.
+    const rect = this.canvas.getBoundingClientRect();
     this.options.onHover(
-      label ? { label, x: event.clientX, y: event.clientY } : null,
+      label
+        ? { label, x: event.clientX - rect.left, y: event.clientY - rect.top, width: rect.width, height: rect.height }
+        : null,
     );
   };
   private onPointerCancel = () => {
@@ -731,22 +741,6 @@ export class CityScene implements CityHandle {
       ? Math.min((time - this.lastTime) / 1000, 0.05)
       : 0;
     this.lastTime = time;
-    const targetPhase = this.options.dayPhase;
-    if (Math.abs(this.displayedPhase - targetPhase) > 0.00001) {
-      const diff =
-        THREE.MathUtils.euclideanModulo(
-          targetPhase - this.displayedPhase + 0.5,
-          1,
-        ) - 0.5;
-      const next = this.options.reducedMotion
-        ? targetPhase
-        : THREE.MathUtils.euclideanModulo(
-            this.displayedPhase + diff * (1 - Math.exp(-dt * 2.5)),
-            1,
-          );
-      this.applyDaylight(next);
-      this.dirty = true;
-    }
     const moving = !this.options.paused && !this.options.reducedMotion;
     if (moving) this.elapsed += dt;
     if (this.walker && this.interior && this.room) {
@@ -777,7 +771,7 @@ export class CityScene implements CityHandle {
         (p) => p.resident.id === this.following,
       );
       if (person)
-        this.target = person.sprite.position
+        this.target = person.body.position
           .clone()
           .add(new THREE.Vector3(0, 3, 0));
     }
@@ -824,10 +818,7 @@ export class CityScene implements CityHandle {
         ) - actor.extent;
       actor.mesh.position.set(
         actor.axis === "x" ? position : actor.lane,
-        actor.height +
-          (actor.pedestrian && moving
-            ? Math.sin(this.elapsed * 9 + actor.offset) * 0.026
-            : 0),
+        actor.height,
         actor.axis === "z" ? position : actor.lane,
       );
       if (actor.citizen) {
@@ -836,15 +827,15 @@ export class CityScene implements CityHandle {
           actor.height + 0.01,
           actor.mesh.position.z,
         );
-        actor.citizen.sprite.material =
-          actor.citizen.frames[
-            moving
-              ? THREE.MathUtils.euclideanModulo(
-                  Math.floor(this.elapsed * 3 + actor.offset),
-                  2,
-                )
-              : 0
-          ];
+        // Walk along the lane, facing the way they're going; the stride matches their speed.
+        actor.citizen.figure.face(
+          actor.axis === "x" ? actor.speed : 0,
+          actor.axis === "z" ? actor.speed : 0,
+        );
+        actor.citizen.figure.pose(
+          this.elapsed * Math.abs(actor.speed) * 7 + actor.offset,
+          moving,
+        );
       } else
         actor.mesh.rotation.y =
           actor.axis === "x"
@@ -855,22 +846,23 @@ export class CityScene implements CityHandle {
               ? -Math.PI / 2
               : Math.PI / 2;
     }
+    this.crowd.update(this.elapsed, dt, moving, this.camera.zoom);
     this.world.bubbles.forEach(({ bubble, person }) => {
       bubble.position
-        .copy(person.sprite.position)
+        .copy(person.body.position)
         .add(new THREE.Vector3(0, 3.5, 0));
     });
     const selected = (this.interior?.people ?? this.world.people).find(
       (p) =>
         p.resident.id === this.selectedResident &&
-        (!this.room || p.sprite.userData.floor === this.room.floor),
+        (!this.room || p.body.userData.floor === this.room.floor),
     );
     this.selection.visible = !!selected;
     if (selected)
       this.selection.position.set(
-        selected.sprite.position.x,
+        selected.body.position.x,
         this.room ? this.room.floor * FLOOR_HEIGHT + 0.15 : 0.61,
-        selected.sprite.position.z,
+        selected.body.position.z,
       );
     if (this.interior?.record && this.recordPlaying && moving)
       this.interior.record.rotation.y = this.elapsed * 1.5;
@@ -901,13 +893,12 @@ export class CityScene implements CityHandle {
   };
 
   private render() {
-    if (Math.sin((this.displayedPhase - 0.25) * Math.PI * 2) < 0.35)
-      this.composer.render();
-    else this.renderer.render(this.scene, this.activeCamera);
+    this.composer.render();
   }
 
   dispose() {
     this.disposed = true;
+    this.crowd.dispose();
     this.renderer.setAnimationLoop(null);
     this.observer.disconnect();
     this.controls.removeEventListener("start", this.cancelTransition);

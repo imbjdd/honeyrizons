@@ -1039,13 +1039,14 @@
   background: rgba(242, 181, 74, 0.1);
 }
 
+/* AI agent sessions read like the other attack bursts (Scan, Brute force). */
 .obsidian-analytics-dashboard .pill[data-kind="agent"] {
-  color: #b2a6ff;
-  background: rgba(157, 141, 245, 0.12);
+  color: var(--review);
+  background: rgba(242, 181, 74, 0.1);
 }
 
 .obsidian-analytics-dashboard .status[data-kind="agent"] {
-  color: #b2a6ff;
+  color: var(--review);
 }
 
 .obsidian-analytics-dashboard .pill[data-kind="open"] {
@@ -2988,4 +2989,407 @@
   display: flex;
   flex-direction: column;
   gap: 6px;
+}
+
+/* ───────── Analyst agent ───────── */
+
+.obsidian-analytics-dashboard .sev {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 20px;
+  min-width: 52px;
+  padding: 0 7px;
+  border-radius: 6px;
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  flex: none;
+}
+
+.obsidian-analytics-dashboard .sev[data-sev="low"] {
+  color: var(--text-3);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.obsidian-analytics-dashboard .sev[data-sev="medium"] {
+  color: var(--review);
+  background: rgba(242, 181, 74, 0.12);
+}
+
+.obsidian-analytics-dashboard .sev[data-sev="high"] {
+  color: #ff8a5b;
+  background: rgba(255, 138, 91, 0.13);
+}
+
+.obsidian-analytics-dashboard .sev[data-sev="critical"] {
+  color: #ff6369;
+  background: rgba(229, 72, 77, 0.16);
+}
+
+.obsidian-analytics-dashboard .ai-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-weight: 600;
+  color: var(--text);
+}
+
+.obsidian-analytics-dashboard .ai-title svg,
+.obsidian-analytics-dashboard .ai-pending svg,
+.obsidian-analytics-dashboard .ai-meta svg {
+  color: var(--accent);
+  flex: none;
+}
+
+.obsidian-analytics-dashboard .ai-hint {
+  margin: 0;
+  color: var(--text-3);
+  font-size: 13px;
+}
+
+/* Session details */
+
+.obsidian-analytics-dashboard .ai-panel {
+  margin: 16px 0 4px;
+  padding-top: 16px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.obsidian-analytics-dashboard .ai-pending {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin: 0;
+  color: var(--text-3);
+  font-size: 13px;
+}
+
+.obsidian-analytics-dashboard .ai-tags {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.obsidian-analytics-dashboard .ai-tag-text {
+  color: var(--text-3);
+  font-size: 12.5px;
+  text-transform: capitalize;
+}
+
+.obsidian-analytics-dashboard .ai-verdict {
+  margin: 10px 0 4px;
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.35;
+  color: var(--text);
+}
+
+.obsidian-analytics-dashboard .ai-text {
+  margin: 0;
+  color: var(--text-2);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.obsidian-analytics-dashboard .ai-reco {
+  display: flex;
+  gap: 8px;
+  margin: 12px 0 0;
+  color: var(--text);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.obsidian-analytics-dashboard .ai-reco span {
+  color: var(--accent);
+}
+
+.obsidian-analytics-dashboard .ai-chips {
+  list-style: none;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 14px 0 0;
+  padding: 0;
+}
+
+.obsidian-analytics-dashboard .ai-chips a {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 24px;
+  padding: 0 8px;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-2);
+  font-size: 12px;
+  text-decoration: none;
+  transition: background-color var(--duration-quick) ease;
+}
+
+.obsidian-analytics-dashboard .ai-chips a:hover {
+  background: rgba(255, 255, 255, 0.09);
+  color: var(--text);
+}
+
+.obsidian-analytics-dashboard .ai-chips code {
+  font-family: var(--obsidian-analytics-dashboard-font-mono);
+  font-size: 11px;
+  color: var(--text-3);
+}
+
+.obsidian-analytics-dashboard .ai-iocs {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 12px 0 0;
+  padding: 0;
+}
+
+.obsidian-analytics-dashboard .ai-iocs li {
+  display: grid;
+  grid-template-columns: 70px minmax(0, 1fr);
+  gap: 8px;
+  align-items: baseline;
+  font-size: 12px;
+}
+
+.obsidian-analytics-dashboard .ai-ioc-type {
+  color: var(--text-3);
+  text-transform: capitalize;
+}
+
+.obsidian-analytics-dashboard .ai-iocs code {
+  overflow: hidden;
+  color: var(--text-2);
+  font-family: var(--obsidian-analytics-dashboard-font-mono);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.obsidian-analytics-dashboard .ai-more {
+  grid-column: 2;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--text-3);
+  font: inherit;
+  font-size: 12px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.obsidian-analytics-dashboard .ai-more:hover {
+  color: var(--text);
+}
+
+.obsidian-analytics-dashboard .ai-meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin: 14px 0 0;
+  color: var(--text-3);
+  font-size: 11.5px;
+}
+
+/* Overview card */
+
+.obsidian-analytics-dashboard .analyst-card {
+  margin-top: 7px;
+  padding: 15px 18px 10px;
+}
+
+.obsidian-analytics-dashboard .analyst-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.obsidian-analytics-dashboard .analyst-headline {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--text);
+  font: inherit;
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.4;
+  text-align: left;
+  cursor: pointer;
+}
+
+.obsidian-analytics-dashboard .analyst-headline .sev {
+  width: 72px;
+}
+
+.obsidian-analytics-dashboard .analyst-headline > span:nth-child(2) {
+  flex: 1;
+  min-width: 0;
+}
+
+/* Same disclosure triangle as the details panel: points right when closed, down when open. */
+.obsidian-analytics-dashboard .analyst-tri {
+  flex: none;
+  color: var(--text-3);
+  transition: transform 250ms var(--ease-smooth-out);
+}
+
+.obsidian-analytics-dashboard .analyst-tri[data-open="true"] {
+  transform: rotate(90deg);
+}
+
+.obsidian-analytics-dashboard .analyst-more {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px 24px;
+  margin: 12px 0 0 84px;
+}
+
+.obsidian-analytics-dashboard .analyst-more .ai-meta {
+  grid-column: 1 / -1;
+  margin-top: 4px;
+}
+
+@container page (max-width: 720px) {
+  .obsidian-analytics-dashboard .analyst-more {
+    grid-template-columns: minmax(0, 1fr);
+    margin-left: 0;
+  }
+}
+
+.obsidian-analytics-dashboard .brief-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  margin: 0;
+  padding: 0;
+}
+
+.obsidian-analytics-dashboard .brief-list li {
+  position: relative;
+  padding-left: 13px;
+  color: var(--text-2);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.obsidian-analytics-dashboard .brief-list li::before {
+  content: "";
+  position: absolute;
+  left: 1px;
+  top: 0.6em;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: var(--text-3);
+}
+
+.obsidian-analytics-dashboard .brief-actions li {
+  color: var(--text);
+}
+
+.obsidian-analytics-dashboard .brief-actions li::before {
+  background: var(--accent);
+}
+
+.obsidian-analytics-dashboard .threat-list {
+  list-style: none;
+  margin: 14px 0 0;
+  padding: 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.obsidian-analytics-dashboard .threat-list li {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.obsidian-analytics-dashboard .threat-list li:last-child {
+  border-bottom: 0;
+}
+
+.obsidian-analytics-dashboard .threat-row {
+  display: grid;
+  grid-template-columns: 72px minmax(0, 1fr) 84px 40px;
+  align-items: center;
+  gap: 12px;
+  width: calc(100% + 16px);
+  margin: 0 -8px;
+  padding: 9px 8px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color var(--duration-quick) ease;
+}
+
+.obsidian-analytics-dashboard .threat-row:hover {
+  background: rgba(255, 255, 255, 0.035);
+}
+
+.obsidian-analytics-dashboard .threat-verdict {
+  overflow: hidden;
+  color: var(--text);
+  font-size: 13px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.obsidian-analytics-dashboard .threat-meta {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--text-3);
+  font-size: 12px;
+  font-family: var(--obsidian-analytics-dashboard-font-mono);
+  white-space: nowrap;
+}
+
+.obsidian-analytics-dashboard .threat-meta .status-dot {
+  display: inline-flex;
+}
+
+.obsidian-analytics-dashboard .threat-row .sev {
+  width: 72px;
+}
+
+.obsidian-analytics-dashboard .threat-age {
+  color: var(--text-3);
+  font-size: 12px;
+  text-align: right;
+}
+
+.obsidian-analytics-dashboard .analyst-empty {
+  margin-top: 12px;
+}
+
+.obsidian-analytics-dashboard .analyst-all {
+  margin-top: 6px;
+}
+
+.obsidian-analytics-dashboard .threat-badge {
+  display: inline-flex;
+  flex: none;
+}
+
+.obsidian-analytics-dashboard .threat-pending {
+  font-size: 12px;
+  color: var(--text-3);
+}
+
+.obsidian-analytics-dashboard .delta-new {
+  color: var(--text-3);
+  background: rgba(255, 255, 255, 0.05);
 }

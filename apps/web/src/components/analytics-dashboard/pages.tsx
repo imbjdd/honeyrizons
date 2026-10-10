@@ -15,6 +15,7 @@ import {
   type RangeId,
 } from "./data";
 import { ArrowRightIcon, KeyIcon, PulseIcon, SearchIcon, ServerIcon, TerminalIcon, TrendIcon, UsersIcon } from "./icons";
+import { AnalystCard, SEVERITY_RANK, ThreatBadge } from "./ai";
 import { CountryFlag } from "./flag";
 import { Digits, formatCount, IpAvatar, ProtocolIcon, Segmented, SessionRow, Sparkline, StatusPill } from "./ui";
 
@@ -59,6 +60,8 @@ export function OverviewPage() {
           <KpiCard key={k.id} kpi={k} range={range} index={i} />
         ))}
       </ul>
+
+      <AnalystCard range={range} style={{ "--i": 2.6 } as CSSProperties} />
 
       <section className="card map-card enter" style={{ "--i": 2.8 } as CSSProperties} aria-labelledby={`${id}-map`}>
         <header className="card-head">
@@ -143,7 +146,7 @@ function EmptyState() {
 function KpiCard({ kpi, range, index }: { kpi: AnalyticsKpi; range: string; index: number }) {
   const Icon = KPI_ICONS[kpi.icon];
   // More attacks is "bad" for the defender, but it is what a honeypot wants, so upward trends stay green.
-  const good = kpi.delta >= 0;
+  const good = (kpi.delta ?? 0) >= 0;
   return (
     <li className="stat enter" style={{ "--i": 2 + index * 0.4 } as CSSProperties}>
       <span className="stat-label">
@@ -152,10 +155,16 @@ function KpiCard({ kpi, range, index }: { kpi: AnalyticsKpi; range: string; inde
       </span>
       <div className="stat-row">
         <Digits value={kpi.value} delay={420 + index * 70} className="stat-value" />
-        <span className="delta" data-good={good}>
-          <TrendIcon size={13} strokeWidth={2} down={kpi.delta < 0} />
-          <Digits value={`${kpi.delta < 0 ? "−" : "+"}${Math.abs(kpi.delta)}%`} delay={500 + index * 70} />
-        </span>
+        {kpi.delta === null ? (
+          <span className="delta delta-new" title="Not enough activity in the previous period to compare">
+            new
+          </span>
+        ) : (
+          <span className="delta" data-good={good}>
+            <TrendIcon size={13} strokeWidth={2} down={kpi.delta < 0} />
+            <Digits value={`${kpi.delta < 0 ? "−" : "+"}${Math.abs(kpi.delta)}%`} delay={500 + index * 70} />
+          </span>
+        )}
       </div>
       <Sparkline key={range} data={kpi.spark} tone={good ? "good" : "bad"} />
     </li>
@@ -389,9 +398,17 @@ function ServiceCard({ service, index }: { service: AnalyticsService; index: num
 /* ───────────── Sessions ───────────── */
 
 export function SessionsPage() {
-  const { data, selected, openSession } = useDashboard();
+  const { data, selected, openSession, intel } = useDashboard();
   const [filter, setFilter] = useState("all");
-  const sessions = data.sessions;
+  const [triage, setTriage] = useState<"all" | "attention">("all");
+  const severityOf = (s: AnalyticsSession) => {
+    const entry = intel.sessions[s.key];
+    const analysis = entry ? intel.analyses[entry.fingerprint] : undefined;
+    return analysis ? SEVERITY_RANK[analysis.severity] : -1;
+  };
+  const needsAttention = (s: AnalyticsSession) => severityOf(s) >= SEVERITY_RANK.high;
+  const sessions = triage === "attention" ? data.sessions.filter(needsAttention) : data.sessions;
+  const attentionCount = data.sessions.filter(needsAttention).length;
   const ids = ["all", ...data.protocols.map((p) => p.id)];
 
   const count = (id: string) => (id === "all" ? sessions.length : sessions.filter((s) => s.protocol === id).length);
@@ -420,6 +437,23 @@ export function SessionsPage() {
 
       <div className="toolbar enter" style={{ "--i": 2 } as CSSProperties}>
         <Segmented label="Filter by protocol" options={options} value={filter} onChange={setFilter} className="seg-wide" />
+        <Segmented
+          label="Filter by severity"
+          options={[
+            { id: "all", label: "Any severity" },
+            {
+              id: "attention",
+              label: (
+                <>
+                  High & critical
+                  <span className="seg-count">{attentionCount}</span>
+                </>
+              ),
+            },
+          ]}
+          value={triage}
+          onChange={setTriage}
+        />
       </div>
 
       {list.length === 0 ? (
@@ -477,6 +511,7 @@ function SessionReviewRow({
           ))}
         </span>
       </div>
+      <ThreatBadge session={session} />
       <StatusPill status={session.status} />
       <button
         type="button"
@@ -494,7 +529,7 @@ function SessionReviewRow({
 /* ───────────── Settings ───────────── */
 
 export function SettingsPage() {
-  const { status, data } = useDashboard();
+  const { status, data, intel } = useDashboard();
   const id = useId();
 
   return (
@@ -533,6 +568,19 @@ export function SettingsPage() {
                 <p className="setting-detail">The API keeps the latest 10,000 events.</p>
               </div>
               <span className="mono">{formatCount(status.totalEvents)}</span>
+            </li>
+            <li className="setting-row">
+              <div>
+                <p className="setting-title">Analyst agent</p>
+                <p className="setting-detail">
+                  {intel.stats.enabled
+                    ? `OpenAI ${intel.stats.model} triages every finished session automatically. ${intel.stats.analyzed} analyzed, ${intel.stats.triaged} classified by local rules, ${intel.stats.queued} queued · ${intel.stats.budgetUsed}/${intel.stats.budgetPerHour} analyses this hour.`
+                    : "Off: sessions are classified by local rules only. Set OPENAI_API_KEY in apps/api/.env for full analysis and the threat brief."}
+                </p>
+              </div>
+              <span className="pill" data-kind={intel.stats.enabled ? "merged" : "review"}>
+                {intel.stats.enabled ? "Running" : "Rules only"}
+              </span>
             </li>
             <li className="setting-row">
               <div>

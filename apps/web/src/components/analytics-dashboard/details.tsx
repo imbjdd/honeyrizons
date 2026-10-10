@@ -1,6 +1,7 @@
 import { useId, useRef, useState, type CSSProperties, type ReactNode, type RefObject } from "react";
 import { useDashboard } from "./context";
 import { countryName, formatDuration, sessionTitle, type AnalyticsSession } from "./data";
+import { SessionAnalysisPanel } from "./ai";
 import { CountryFlag } from "./flag";
 import { PanelIcon, TriangleIcon } from "./icons";
 import { IpAvatar, ProtocolIcon } from "./ui";
@@ -101,6 +102,8 @@ export function SessionDetails({ session, phase, open, visible, panelRef, hideRe
                 </div>
               )}
             </dl>
+
+            <SessionAnalysisPanel session={session} />
 
             {session.creds.length > 0 && (
               <Disclosure key={`c-${session.key}`} title={`Credentials (${session.creds.length})`}>

@@ -1,7 +1,7 @@
 import * as THREE from "three";
 import { CityGeometry } from "./geometry";
 import { furnishRoom } from "./roomLayouts";
-import { CharacterArt, type CitizenSprite } from "./characters";
+import { CharacterArt, type Citizen } from "./characters";
 import { getBuilding, roomResidents, type RoomLocation } from "./explore";
 import { FLOOR_HEIGHT, type RoomCollider } from "./RoomController";
 
@@ -12,7 +12,7 @@ export interface Interior {
   floors: number;
   update: (time: number, moving: boolean, selected: string | null) => void;
   picks: THREE.Object3D[];
-  people: CitizenSprite[];
+  people: Citizen[];
   record: THREE.Mesh | null;
   dispose: () => void;
 }
@@ -419,11 +419,9 @@ function buildRoom(location: RoomLocation, art: CharacterArt) {
         positions.push([x, z]);
   const people = roomResidents(location).map((resident, i) => {
     const [x, z] = positions[i];
-    const person = art.create(resident, root, x, 0.11, z);
-    person.sprite.scale.set(1.3, 1.95, 1);
-    person.shadow.scale.set(0.75, 0.5, 1);
-    person.sprite.userData.floor = location.floor;
-    picks.push(person.sprite);
+    const person = art.create(resident, root, x, 0.11, z, 0.85);
+    person.body.userData.floor = location.floor;
+    picks.push(person.figure.hit);
     return person;
   });
   const bubble = art.bubble(
@@ -452,18 +450,21 @@ function buildRoom(location: RoomLocation, art: CharacterArt) {
             Math.abs(z + offset - c.z) < c.d / 2 + 0.3,
         )
       )
-        person.sprite.position.z = z + offset;
+      {
+        // Turn towards the way they're pacing, and face the room when standing.
+        const dz = z + offset - person.body.position.z;
+        person.body.position.z = z + offset;
+        if (Math.abs(dz) > 0.0005) person.figure.face(0, dz);
+      }
+      const walking = moving && i > 0 && selected !== person.resident.id;
+      // Standing residents face the room; the one you're talking to keeps facing you (set by the scene).
+      if (!walking && selected !== person.resident.id) person.body.rotation.y = 0;
+      person.figure.pose(time * 6 + i, walking);
       person.shadow.position.set(
-        person.sprite.position.x,
+        person.body.position.x,
         0.115,
-        person.sprite.position.z,
+        person.body.position.z,
       );
-      person.sprite.material =
-        person.frames[
-          moving && i > 0 && selected !== person.resident.id
-            ? Math.floor(time * 3) % 2
-            : 0
-        ];
     });
   }
   geo.finish();

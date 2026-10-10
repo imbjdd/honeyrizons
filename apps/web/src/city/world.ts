@@ -1,7 +1,7 @@
 import * as THREE from "three";
 import { CityGeometry, movingMesh, seededRandom } from "./geometry";
 import { districts } from "./model";
-import { CharacterArt, type CitizenSprite } from "./characters";
+import { CharacterArt, type Citizen } from "./characters";
 import { buildings, residents, residentById, type Building } from "./explore";
 
 export interface MovingActor {
@@ -13,16 +13,15 @@ export interface MovingActor {
   extent: number;
   height: number;
   pedestrian?: boolean;
-  citizen?: CitizenSprite;
+  citizen?: Citizen;
 }
 export interface CityWorld {
   geometry: CityGeometry;
   actors: MovingActor[];
   picks: THREE.Object3D[];
-  people: CitizenSprite[];
-  bubbles: { bubble: THREE.Sprite; person: CitizenSprite }[];
+  people: Citizen[];
+  bubbles: { bubble: THREE.Sprite; person: Citizen }[];
   art: CharacterArt;
-  overlays: THREE.Mesh[];
   water: THREE.Mesh;
   beacon: THREE.Group;
   nightLights: THREE.PointLight[];
@@ -39,9 +38,8 @@ export function buildWorld(scene: THREE.Group): CityWorld {
     sign = geo.sign.bind(geo);
   const actors: MovingActor[] = [],
     picks: THREE.Object3D[] = [],
-    people: CitizenSprite[] = [];
-  const bubbles: CityWorld["bubbles"] = [],
-    overlays: THREE.Mesh[] = [];
+    people: Citizen[] = [];
+  const bubbles: CityWorld["bubbles"] = [];
   const art = new CharacterArt(),
     nightProps = new THREE.Group();
   const extras: THREE.Mesh[] = [],
@@ -148,10 +146,10 @@ export function buildWorld(scene: THREE.Group): CityWorld {
   const glowTexture = new THREE.CanvasTexture(glowCanvas);
   geo.textures.add(glowTexture);
 
-  // Four city blocks, a waterfront and a raised transit promenade.
+  // Four city blocks, a waterfront and a raised transit promenade, on a single base: the city reads as a model
+  // standing on the page rather than a scene cut out of a larger world.
   box(0, -1.4, 2, 190, 3, 172, "#466789");
   box(0, 0.22, 2, 188, 0.5, 170, "#bbd3e6");
-  box(0, -2.7, 20, 340, 0.35, 285, "#2687b7");
   for (let x = -90; x < 94; x += 4)
     box(x, 0.49, 2, 0.035, 0.02, 168, "#a3bed6");
   for (let z = -80; z < 86; z += 4)
@@ -558,11 +556,10 @@ export function buildWorld(scene: THREE.Group): CityWorld {
       0.65,
       axis === "z" ? offset : lane,
     );
-    person.sprite.scale.set(1.9, 2.85, 1);
     people.push(person);
-    picks.push(person.sprite);
+    picks.push(person.figure.hit);
     actors.push({
-      mesh: person.sprite,
+      mesh: person.body,
       axis,
       lane,
       speed: (i % 2 ? 1 : -1) * (0.5 + random() * 0.35),
@@ -577,28 +574,15 @@ export function buildWorld(scene: THREE.Group): CityWorld {
         bubble: art.bubble(
           resident.phrase,
           scene,
-          person.sprite.position.x,
+          person.body.position.x,
           4,
-          person.sprite.position.z,
+          person.body.position.z,
         ),
         person,
       });
   }
+  // Each district glows in its color at night.
   for (const district of districts) {
-    const material = new THREE.MeshBasicMaterial({
-      color: district.color,
-      transparent: true,
-      opacity: 0.24,
-      depthWrite: false,
-    });
-    extraMaterials.add(material);
-    const overlay = new THREE.Mesh(new THREE.PlaneGeometry(25, 27), material);
-    overlay.rotation.x = -Math.PI / 2;
-    overlay.position.set(district.position[0], 0.8, district.position[2]);
-    overlay.visible = false;
-    scene.add(overlay);
-    extras.push(overlay);
-    overlays.push(overlay);
     const light = new THREE.PointLight(district.color, 0, 32, 1.5);
     light.position.set(district.position[0], 5, district.position[2] + 12);
     scene.add(light);
@@ -630,7 +614,6 @@ export function buildWorld(scene: THREE.Group): CityWorld {
     people,
     bubbles,
     art,
-    overlays,
     water,
     beacon,
     nightLights,

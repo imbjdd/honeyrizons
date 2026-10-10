@@ -218,6 +218,16 @@ export const ClaudeIcon = ({ size = 16, ...rest }: IconProps) => (
   </svg>
 );
 
+export const CityIcon = (p: IconProps) => (
+  <Base {...p}>
+    <path d="M3 21h18" />
+    <path d="M5 21V9l5-3v15" />
+    <path d="M10 21V4l6 3v14" />
+    <path d="M16 21v-8l3 2v6" />
+    <path d="M13 10v.01M13 13v.01M13 16v.01M7.5 12v.01M7.5 15v.01" />
+  </Base>
+);
+
 export const BotIcon = (p: IconProps) => (
   <Base {...p}>
     <path d="M12 8V4H8" />
@@ -284,5 +294,13 @@ export const RadarIcon = (p: IconProps) => (
     <path d="M17.99 11.66A6 6 0 0 1 15.77 16.67" />
     <circle cx="12" cy="12" r="2" />
     <path d="m13.41 10.59 5.66-5.66" />
+  </Base>
+);
+
+export const SparklesIcon = (p: IconProps) => (
+  <Base {...p}>
+    <path d="M9.94 14.06 8 20l-1.94-5.94L0 12l6.06-1.94L8 4l1.94 6.06L16 12z" transform="translate(2 0) scale(0.9)" />
+    <path d="M19 3v4" />
+    <path d="M17 5h4" />
   </Base>
 );

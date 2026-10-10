@@ -32,3 +32,13 @@ A six-minute city day moves through noon, sunset and night. Windows and street l
 Adding neon trim to the earlier timber city would leave the rejected architecture intact. Replace the exterior generator and every room layout. Glass towers need different silhouettes, not repeated boxes with different signs. Preserve useful controls and working navigation. Give each venue a recognizable object visible from the door so entering two buildings cannot feel like entering the same room.
 
 Use original geometry and sprites. Keep the frontend independent of the honeypot, preserve `/dashboard`, and update PR #1 after browser checks and new day, night and interior captures.
+
+## Update: one product with the dashboard
+
+The city is now a page of the dashboard rather than a separate app. Its interface follows the dashboard's design
+language (dark glass surfaces, Inter and JetBrains Mono, the shared protocol palette, the dashboard's buttons and
+segmented controls); the palette and fonts above now apply to the 3D scene only. District colors match the
+dashboard's protocol colors, the city is always at night (graded to the dashboard's charcoal), each honeypot
+service is a landmark building, and each recent attack walks the streets as a person heading to its door. The brand header, fake network statistics and separate activity panel were removed: the
+dashboard already provides them.
+

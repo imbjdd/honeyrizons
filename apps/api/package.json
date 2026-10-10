@@ -9,7 +9,9 @@
   },
   "dependencies": {
     "@honeyrizons/shared": "workspace:*",
-    "geoip-lite": "^2.0.3"
+    "geoip-lite": "^2.0.3",
+    "openai": "^7.32.0",
+    "zod": "^4.6.5"
   },
   "devDependencies": {
     "@honeyrizons/tsconfig": "workspace:*",

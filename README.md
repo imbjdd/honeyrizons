@@ -57,6 +57,31 @@ Set the honeypot's position on the map with `HONEYPOT_LOCATION="lat,lon"` for th
 
 To target a single package: `bunx turbo run dev --filter=@honeyrizons/web`.
 
+## Analyst agent
+
+Every session is triaged automatically; nobody has to click anything.
+
+- **Local rules (free)**: sessions with nothing to read (password guessing with no commands, bare connections) get an
+  instant verdict without any LLM call.
+- **Analyst agent**: sessions where the attacker actually did something (shell commands, MCP tool calls, HTTP requests) are
+  sent, once they have been quiet for 90 seconds, to a small OpenAI model (`gpt-5.4-nano` by default). It returns a category,
+  severity, attacker type, MITRE ATT&CK techniques, indicators and one recommended action.
+- **Campaigns**: sessions with the same behavior share a fingerprint (normalized commands, not IPs or timestamps), so a botnet
+  replaying one script from hundreds of IPs costs a single analysis, and the dashboard shows "same behavior from N IPs".
+- **Threat brief**: every 30 minutes, when there is something new, the analyst writes a brief of the last 24 hours from
+  aggregated stats and its own verdicts.
+
+Where it shows up: severity badges in every session list, a "High & critical" filter on the Sessions page, the verdict at the
+top of each session's details, and an Analyst card on the Overview with the brief and a "Needs attention" list.
+
+Cost control: an hourly cap on LLM calls (`OPENAI_MAX_ANALYSES_PER_HOUR`, default 40; the richest sessions go first, the
+rest wait), trimmed inputs, capped outputs, low reasoning effort, and results persisted to `logs/intel.json` so nothing is
+paid for twice, even across restarts. The attacker's IP and country are never sent to OpenAI, and attacker-controlled text is
+passed as delimited, untrusted data.
+
+Setup: `cp apps/api/.env.example apps/api/.env` and set `OPENAI_API_KEY`. The `.env` file is git-ignored. Without a key,
+sessions are still classified by the local rules.
+
 ## Exposed services
 
 | Service              | Port | Config                                              |

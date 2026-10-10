@@ -3,6 +3,7 @@ import type { AnalyticsDashboardPage } from "@/components/analytics-dashboard/co
 
 const PATHS: Record<AnalyticsDashboardPage, string> = {
   overview: "/",
+  agents: "/agents",
   city: "/city",
   services: "/services",
   sessions: "/sessions",

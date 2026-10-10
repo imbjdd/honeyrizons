@@ -46,7 +46,7 @@ resource "aws_iam_role_policy" "github_deploy" {
       {
         Sid      = "Compute"
         Effect   = "Allow"
-        Action   = ["ec2:*", "cloudfront:*", "ecr:*", "ssm:*"]
+        Action   = ["ec2:*", "cloudfront:*", "ecr:*", "ssm:*", "route53:*", "acm:*"]
         Resource = "*"
       },
       {

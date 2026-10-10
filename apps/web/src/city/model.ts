@@ -82,6 +82,8 @@ export interface CityOptions {
   inputBlocked: boolean;
   onNearby: (label: string | null) => void;
   onReady: () => void;
+  /** The opening camera shot finished or was interrupted. Never fires when reduced motion skips it. */
+  onIntroEnd: () => void;
   onError: (message: string) => void;
   onInteraction: () => void;
   onPhotoSaved: () => void;

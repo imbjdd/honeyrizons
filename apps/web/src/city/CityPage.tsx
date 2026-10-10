@@ -33,6 +33,9 @@ export default function CityPage() {
   const { sites, attackers, feed, latest, buildingOf } = useCityActivity();
 
   const [ready, setReady] = useState(false);
+  // Opening shot: the city takes over the window while the camera dives in and turns a quarter.
+  const [intro, setIntro] = useState(!reducedMotion);
+  const [immersive, setImmersive] = useState(false);
   const [error, setError] = useState("");
   const [room, setRoom] = useState<RoomLocation | null>(null);
   const [inspection, setInspection] = useState<Inspection | null>(null);
@@ -64,6 +67,14 @@ export default function CityPage() {
     setTouring(false);
   }, []);
   const onReady = useCallback(() => setReady(true), []);
+  const onIntroEnd = useCallback(() => setIntro(false), []);
+
+  // Grows into full screen after the first paint, so the dashboard visibly makes room.
+  useEffect(() => {
+    if (!ready) return;
+    const frame = requestAnimationFrame(() => setImmersive(true));
+    return () => cancelAnimationFrame(frame);
+  }, [ready]);
   const onInteraction = useCallback(() => setTouring(false), []);
   const onPhotoSaved = useCallback(() => announce("Your city photo is downloading."), [announce]);
   const onAttacker = useCallback((id: string) => openSession(id), [openSession]);
@@ -75,6 +86,7 @@ export default function CityPage() {
       inputBlocked: !!inspection || !!popover,
       onNearby: setNearby,
       onReady,
+      onIntroEnd,
       onError: setError,
       onInteraction,
       onPhotoSaved,
@@ -84,7 +96,7 @@ export default function CityPage() {
       onHover: setHover,
       onAttacker,
     }),
-    [paused, reducedMotion, inspection, popover, onReady, onInteraction, onPhotoSaved, onInspect, onRoomChange, onAttacker],
+    [paused, reducedMotion, inspection, popover, onReady, onIntroEnd, onInteraction, onPhotoSaved, onInspect, onRoomChange, onAttacker],
   );
 
   // People in the streets follow the honeypot's recent sessions.
@@ -108,7 +120,7 @@ export default function CityPage() {
     city.current?.focus(building);
   }, []);
 
-  useCityKeyboard({ city, inspection, following, room, popover, photo, setPhoto, setPopover, setPaused, setTouring });
+  useCityKeyboard({ city, inspection, following, room, popover, photo, immersive, setPhoto, setPopover, setPaused, setTouring, setImmersive });
 
   const camera = {
     zoom: (direction: number) => city.current?.zoom(direction),
@@ -132,9 +144,9 @@ export default function CityPage() {
   const selectedSite = sites.find((s) => s.building === service);
 
   return (
-    <div className="page-content city-page">
+    <div className="page-content city-page" data-immersive={immersive}>
       <section
-        className={cn("city-stage enter", photo && "is-photo", room && "in-room")}
+        className={cn("city-stage enter", photo && "is-photo", room && "in-room", intro && "is-intro")}
         style={{ "--i": 1 } as CSSProperties}
         aria-label="Honeyrizons city"
       >
@@ -170,6 +182,8 @@ export default function CityPage() {
               popover={popover}
               setPopover={setPopover}
               enterBuilding={(id) => city.current?.enter(id)}
+              immersive={immersive}
+              toggleImmersive={() => setImmersive((v) => !v)}
             />
             {!room && <CityServiceLabels city={city} sites={sites} selected={service} select={visit} />}
             {!room && selectedSite && <CityServiceCard site={selectedSite} close={() => setService(null)} enter={() => city.current?.enter(selectedSite.building)} />}
@@ -218,10 +232,12 @@ function useCityKeyboard(state: {
   room: RoomLocation | null;
   popover: CityPopover;
   photo: boolean;
+  immersive: boolean;
   setPhoto: (value: boolean) => void;
   setPopover: (value: CityPopover) => void;
   setPaused: (update: (value: boolean) => boolean) => void;
   setTouring: (value: boolean) => void;
+  setImmersive: (value: boolean) => void;
 }) {
   const latest = useRef(state);
   latest.current = state;
@@ -241,7 +257,11 @@ function useCityKeyboard(state: {
         else if (s.inspection) s.city.current?.inspect(null);
         else if (s.following) s.city.current?.follow(null);
         else if (s.room) s.city.current?.exit();
-        else {
+        else if (s.immersive) {
+          s.setTouring(false);
+          s.city.current?.tour(false);
+          s.setImmersive(false);
+        } else {
           s.setTouring(false);
           s.city.current?.tour(false);
           return;

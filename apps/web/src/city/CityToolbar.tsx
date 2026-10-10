@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { Camera, Compass, DoorOpen, HelpCircle, Home, Minus, Pause, Play, Plus, RotateCcw, RotateCw, Volume2, VolumeX } from "lucide-react";
+import { Camera, Compass, DoorOpen, HelpCircle, Home, Maximize2, Minimize2, Minus, Pause, Play, Plus, RotateCcw, RotateCw, Volume2, VolumeX } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { buildings, type BuildingId } from "./explore";
 
@@ -48,6 +48,8 @@ export function CityToolbar(props: {
   popover: CityPopover;
   setPopover: (value: CityPopover) => void;
   enterBuilding: (id: BuildingId) => void;
+  immersive: boolean;
+  toggleImmersive: () => void;
 }) {
   const { room, camera, popover, setPopover } = props;
   const toggle = (next: Exclude<CityPopover, null>) => setPopover(popover === next ? null : next);
@@ -98,6 +100,9 @@ export function CityToolbar(props: {
         )}
         <Tool label="Controls" active={popover === "help"} onClick={() => toggle("help")}>
           <HelpCircle size={15} />
+        </Tool>
+        <Tool label={props.immersive ? "Show dashboard (Esc)" : "Full screen"} onClick={props.toggleImmersive}>
+          {props.immersive ? <Minimize2 size={14} /> : <Maximize2 size={14} />}
         </Tool>
       </div>
 

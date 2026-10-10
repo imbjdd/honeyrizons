@@ -30,4 +30,9 @@ for pw in root 123456 admin; do
   " >/dev/null 2>&1
 done
 
+bun "$(dirname "$0")/agent-attack.ts" >/dev/null && echo "(scripted MCP agent attacks sent)"
+
+# Real Claude agent against the MCP honeypot; skips itself without Anthropic credentials.
+bun "$(dirname "$0")/claude-agent.ts"
+
 echo "done — check the dashboard"

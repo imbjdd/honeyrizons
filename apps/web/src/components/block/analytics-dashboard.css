@@ -1039,6 +1039,15 @@
   background: rgba(242, 181, 74, 0.1);
 }
 
+.obsidian-analytics-dashboard .pill[data-kind="agent"] {
+  color: #b2a6ff;
+  background: rgba(157, 141, 245, 0.12);
+}
+
+.obsidian-analytics-dashboard .status[data-kind="agent"] {
+  color: #b2a6ff;
+}
+
 .obsidian-analytics-dashboard .pill[data-kind="open"] {
   color: var(--open);
   background: rgba(90, 169, 255, 0.1);

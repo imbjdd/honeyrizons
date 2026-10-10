@@ -34,6 +34,7 @@ export function SessionDetails({ session, phase, open, visible, panelRef, hideRe
   const panelId = `${uid}-details`;
   const titleId = `${uid}-details-title`;
   const isHttp = session.protocol === "HTTP";
+  const isMcp = session.protocol === "MCP";
 
   return (
     <aside ref={panelRef} id={panelId} className="details" data-open={open} inert={!visible} aria-labelledby={titleId}>
@@ -115,7 +116,7 @@ export function SessionDetails({ session, phase, open, visible, panelRef, hideRe
               </Disclosure>
             )}
 
-            <Disclosure key={`t-${session.key}`} title={isHttp ? `Requests (${session.interactions.length})` : `Transcript (${session.interactions.length})`}>
+            <Disclosure key={`t-${session.key}`} title={`${isHttp ? "Requests" : isMcp ? "Tool calls" : "Transcript"} (${session.interactions.length})`}>
               {session.interactions.length === 0 ? (
                 <p>No commands recorded.</p>
               ) : (
@@ -123,7 +124,7 @@ export function SessionDetails({ session, phase, open, visible, panelRef, hideRe
                   {session.interactions.map((it, i) => (
                     <li key={i}>
                       <div className="transcript-in">
-                        <span className="transcript-prompt">{isHttp ? "→" : "$"}</span>
+                        <span className="transcript-prompt">{isHttp ? "→" : isMcp ? "ƒ" : "$"}</span>
                         <code>{it.input}</code>
                         <time>{formatTime(it.time)}</time>
                       </div>

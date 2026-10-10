@@ -7,6 +7,17 @@
     "start": "mkdir -p ../../logs && ./bin/beelzebub run -c config/beelzebub.yaml -s config/services/",
     "validate": "./bin/beelzebub validate -c config/beelzebub.yaml -s config/services/",
     "attack": "./scripts/attack.sh",
-    "seed": "bun scripts/seed-demo.ts"
+    "seed": "bun scripts/seed-demo.ts",
+    "attack:agent": "bun scripts/agent-attack.ts",
+    "typecheck": "tsc",
+    "attack:claude": "bun scripts/claude-agent.ts"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.133.0"
+  },
+  "devDependencies": {
+    "@honeyrizons/tsconfig": "workspace:*",
+    "@types/bun": "^1.4.2",
+    "typescript": "^5.9.0"
   }
 }

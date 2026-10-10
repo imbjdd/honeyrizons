@@ -35,6 +35,12 @@
     },
     "seed": {
       "cache": false
+    },
+    "attack:agent": {
+      "cache": false
+    },
+    "attack:claude": {
+      "cache": false
     }
   }
 }

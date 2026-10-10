@@ -1,5 +1,5 @@
 import { lazy, Suspense, useId, useState, type CSSProperties } from "react";
-import { ACCENTS, useDashboard, type AnalyticsDashboardAccent } from "./context";
+import { ACCENTS, useDashboard } from "./context";
 import {
   countryName,
   relativeTime,
@@ -14,7 +14,7 @@ import {
   type AnalyticsSession,
   type RangeId,
 } from "./data";
-import { ArrowRightIcon, CheckIcon, KeyIcon, PulseIcon, SearchIcon, ServerIcon, TerminalIcon, TrendIcon, UsersIcon } from "./icons";
+import { ArrowRightIcon, KeyIcon, PulseIcon, SearchIcon, ServerIcon, TerminalIcon, TrendIcon, UsersIcon } from "./icons";
 import { CountryFlag } from "./flag";
 import { Digits, formatCount, IpAvatar, ProtocolIcon, Segmented, SessionRow, Sparkline, StatusPill } from "./ui";
 
@@ -494,7 +494,7 @@ function SessionReviewRow({
 /* ───────────── Settings ───────────── */
 
 export function SettingsPage() {
-  const { accent, setAccent, status, data } = useDashboard();
+  const { status, data } = useDashboard();
   const id = useId();
 
   return (
@@ -502,7 +502,7 @@ export function SettingsPage() {
       <header className="page-head enter" style={{ "--i": 1 } as CSSProperties}>
         <div className="page-head-text">
           <h1 className="page-title">Settings</h1>
-          <p className="page-sub">Honeypot status and dashboard appearance.</p>
+          <p className="page-sub">Honeypot status and data source.</p>
         </div>
       </header>
 
@@ -544,36 +544,6 @@ export function SettingsPage() {
           </ul>
         </section>
 
-        <section className="card settings-card enter" style={{ "--i": 2.5 } as CSSProperties} aria-labelledby={`${id}-look`}>
-          <h2 id={`${id}-look`} className="card-title">
-            Appearance
-          </h2>
-          <div className="setting-row">
-            <div>
-              <p id={`${id}-accent`} className="setting-title">
-                Accent color
-              </p>
-              <p className="setting-detail">Tints buttons, selections and highlights. Applies right away.</p>
-            </div>
-            <div className="swatches" role="radiogroup" aria-labelledby={`${id}-accent`}>
-              {(Object.keys(ACCENTS) as AnalyticsDashboardAccent[]).map((accentId) => (
-                <button
-                  key={accentId}
-                  type="button"
-                  role="radio"
-                  aria-checked={accent === accentId}
-                  aria-label={ACCENTS[accentId].label}
-                  className="swatch press has-tip tip-top"
-                  data-tip={ACCENTS[accentId].label}
-                  style={{ "--swatch": ACCENTS[accentId].ui } as CSSProperties}
-                  onClick={() => setAccent(accentId)}
-                >
-                  <CheckIcon size={13} strokeWidth={2.6} />
-                </button>
-              ))}
-            </div>
-          </div>
-        </section>
       </div>
     </div>
   );

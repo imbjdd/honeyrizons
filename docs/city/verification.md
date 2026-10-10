@@ -7,7 +7,7 @@ Checked in the T3 Code collaborative browser on October 10, 2026, using the prod
 - Frontend production build and repository typechecks pass.
 - The five walking tests pass with 19 assertions. They cover furniture and wall collision, sliding, three-floor stairs in both directions, stairwell boundaries, frame-rate-independent movement, diagonal speed, pitch limits and the ground-floor exit.
 - Frozen dependency installation and whitespace checks pass.
-- The latest upstream dashboard and attack globe are preserved at /dashboard. The dashboard source matches origin/main at 31b61d8. Its stylesheet and fonts load only on that route.
+- The latest upstream dashboard and attack globe are preserved at /dashboard. The dashboard source matches origin/main at eb5d7cf. Its stylesheet and fonts load only on that route.
 - The city route makes no API or SSE requests. The globe module is a separate lazy chunk. Vite still warns about large chunks.
 
 ## City checks

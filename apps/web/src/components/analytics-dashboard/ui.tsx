@@ -4,7 +4,7 @@ import { cn } from "@/lib/utils";
 import { useDashboard } from "./context";
 import { protocolColor } from "@honeyrizons/shared";
 import { attackerColor, relativeTime, sessionTitle, type AnalyticsSession, type AnalyticsSessionStatus } from "./data";
-import { CheckIcon, GlobeIcon, PulseIcon, RadarIcon, ServerIcon, TerminalIcon } from "./icons";
+import { BotIcon, CheckIcon, GlobeIcon, PulseIcon, RadarIcon, ServerIcon, TerminalIcon } from "./icons";
 import { NumberAnimation } from "./number-animation";
 
 /** "3.4h" → "0.0h", "+12%" → "+0%": the resting shape the reels roll up from. */
@@ -166,7 +166,7 @@ export function Switch({
   );
 }
 
-const STATUS_ICON = { merged: CheckIcon, review: RadarIcon, open: PulseIcon } as const;
+const STATUS_ICON = { merged: CheckIcon, review: RadarIcon, open: PulseIcon, agent: BotIcon } as const;
 
 export function StatusPill({ status }: { status: AnalyticsSessionStatus }) {
   const Icon = STATUS_ICON[status.kind];
@@ -179,7 +179,7 @@ export function StatusPill({ status }: { status: AnalyticsSessionStatus }) {
 }
 
 export function ProtocolIcon({ protocol, size = 15 }: { protocol: string; size?: number }) {
-  const Icon = protocol === "HTTP" ? GlobeIcon : protocol === "TCP" ? ServerIcon : TerminalIcon;
+  const Icon = protocol === "HTTP" ? GlobeIcon : protocol === "TCP" ? ServerIcon : protocol === "MCP" ? BotIcon : TerminalIcon;
   return (
     <span className="status-dot" style={{ color: protocolColor(protocol) }}>
       <Icon size={size} strokeWidth={1.9} />

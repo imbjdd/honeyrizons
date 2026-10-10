@@ -13,6 +13,8 @@
     "typecheck": "turbo run typecheck",
     "attack": "turbo run attack --filter=@honeyrizons/honeypot",
     "seed": "turbo run seed --filter=@honeyrizons/honeypot",
+    "attack:agent": "turbo run attack:agent --filter=@honeyrizons/honeypot",
+    "attack:claude": "turbo run attack:claude --filter=@honeyrizons/honeypot",
     "dev:web": "bun run --cwd apps/web dev",
     "build:web": "bun run --cwd apps/web build"
   },

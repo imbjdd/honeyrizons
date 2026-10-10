@@ -1,0 +1,7 @@
+.git
+**/node_modules
+**/dist
+**/.turbo
+apps/honeypot/bin
+apps/honeypot/beelzebub
+logs

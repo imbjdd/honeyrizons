@@ -162,3 +162,4 @@ export type IntelPatch = Partial<Omit<IntelSnapshot, "sessions">> & { sessions?:
 
 export * from "./sessions";
 export * from "./chronicle";
+export * from "./agents";

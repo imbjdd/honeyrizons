@@ -2,7 +2,7 @@ import { createContext, useContext } from "react";
 import type { ChronicleEvent, IntelSnapshot } from "@honeyrizons/shared";
 import type { AnalyticsDashboardData } from "./data";
 
-export type AnalyticsDashboardPage = "overview" | "city" | "services" | "sessions" | "settings";
+export type AnalyticsDashboardPage = "overview" | "agents" | "city" | "services" | "sessions" | "settings";
 
 export type AnalyticsDashboardAccent = "blue" | "violet" | "teal" | "amber";
 

@@ -25,8 +25,9 @@ import {
 import type { ChronicleEvent, IntelSnapshot } from "@honeyrizons/shared";
 import type { AnalyticsDashboardData } from "@/components/analytics-dashboard/data";
 import { SessionDetails, type Phase } from "@/components/analytics-dashboard/details";
-import { CityIcon, HomeIcon, PanelIcon, ServerIcon, SettingsIcon, TerminalIcon } from "@/components/analytics-dashboard/icons";
+import { BotIcon, CityIcon, HomeIcon, PanelIcon, ServerIcon, SettingsIcon, TerminalIcon } from "@/components/analytics-dashboard/icons";
 import { OverviewPage, ServicesPage, SessionsPage, SettingsPage } from "@/components/analytics-dashboard/pages";
+import { AgentsPage } from "@/components/analytics-dashboard/agents";
 import "./analytics-dashboard.css";
 
 export type { AnalyticsDashboardData } from "@/components/analytics-dashboard/data";
@@ -42,6 +43,7 @@ const CityPage = lazy(() => import("@/city/CityPage"));
 
 const NAV = [
   { page: "overview", label: "Overview", Icon: HomeIcon },
+  { page: "agents", label: "AI agents", Icon: BotIcon },
   { page: "city", label: "City", Icon: CityIcon },
   { page: "services", label: "Services", Icon: ServerIcon },
   { page: "sessions", label: "Sessions", Icon: TerminalIcon },
@@ -50,6 +52,7 @@ const NAV = [
 
 const PAGES: Record<AnalyticsDashboardPage, ComponentType> = {
   overview: OverviewPage,
+  agents: AgentsPage,
   city: CityPage,
   services: ServicesPage,
   sessions: SessionsPage,

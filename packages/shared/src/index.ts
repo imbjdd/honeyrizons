@@ -161,3 +161,4 @@ export type IntelSnapshot = {
 export type IntelPatch = Partial<Omit<IntelSnapshot, "sessions">> & { sessions?: Record<string, SessionIntel> };
 
 export * from "./sessions";
+export * from "./chronicle";

@@ -5,10 +5,12 @@ import geoip from "geoip-lite";
 import { sourceIp, type GeoLocation, type HoneypotEvent, type HoneypotService } from "@honeyrizons/shared";
 import { ANALYST_MODEL, analystEnabled } from "./analyst";
 import { startIntel } from "./intel";
+import { startChronicle } from "./chronicle";
 
 const LOG_PATH = resolve(process.env.LOG_PATH ?? join(import.meta.dir, "../../../logs/beelzebub.log"));
 // Analyst verdicts + threat brief. The log volume is read-only in docker-compose, so this lives elsewhere there.
 const INTEL_PATH = resolve(process.env.INTEL_PATH ?? join(dirname(LOG_PATH), "intel.json"));
+const CHRONICLE_PATH = resolve(process.env.CHRONICLE_PATH ?? join(dirname(INTEL_PATH), "chronicle.json"));
 const PORT = Number(process.env.PORT ?? 4000);
 const MAX_EVENTS = Number(process.env.MAX_EVENTS ?? 10000);
 // Where the honeypot itself sits on the map, as "lat,lon". Defaults to Paris.
@@ -107,6 +109,14 @@ const intel = startIntel({
   storePath: INTEL_PATH,
 });
 
+const chronicle = startChronicle({
+  events: () => events,
+  services: readServices,
+  intel: intel.snapshot,
+  publish: (fresh) => broadcast(`event: chronicle\ndata: ${JSON.stringify(fresh)}\n\n`),
+  storePath: CHRONICLE_PATH,
+});
+
 // Keep SSE connections alive through proxies.
 setInterval(() => {
   const ping = encoder.encode(": ping\n\n");
@@ -145,6 +155,10 @@ Bun.serve({
       return new Response(stream, {
         headers: { "Content-Type": "text/event-stream", "Cache-Control": "no-cache", Connection: "keep-alive" },
       });
+    }
+
+    if (url.pathname === "/api/chronicle") {
+      return Response.json(chronicle.snapshot());
     }
 
     if (url.pathname === "/api/intel") {

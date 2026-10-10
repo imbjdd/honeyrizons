@@ -7,6 +7,7 @@ import CityCanvas from "./CityCanvas";
 import { CityFeed } from "./CityFeed";
 import { CityServiceCard } from "./CityServiceCard";
 import { CityServiceLabels } from "./CityServiceLabels";
+import { CityTimeline } from "./CityTimeline";
 import { CityToolbar, type CityPopover } from "./CityToolbar";
 import ExploreOverlay from "./ExploreOverlay";
 import type { BuildingId, HoverTarget, Inspection, RoomLocation } from "./explore";
@@ -25,12 +26,16 @@ type PhotoFilter = (typeof PHOTO_FILTERS)[number]["id"];
 
 /** The honeypot as a living city: each service is a building, each recent attack a person walking to its door. */
 export default function CityPage() {
-  const { openSession, selected } = useDashboard();
+  const { openSession, selected, chronicle, now } = useDashboard();
   const city = useRef<CityHandle | null>(null);
   const reducedMotion = useReducedMotion();
   const [paused, setPaused] = useState(false);
   const sound = useCitySound();
-  const { sites, attackers, feed, latest, buildingOf } = useCityActivity();
+  // Null while the timeline is live; a past instant once it has been scrubbed back.
+  const [scrub, setScrub] = useState<number | null>(null);
+  const live = scrub === null;
+  const viewedAt = scrub ?? now;
+  const { sites, attackers, feed, latest, buildingOf } = useCityActivity(viewedAt, live);
 
   const [ready, setReady] = useState(false);
   // Opening shot: the city takes over the window while the camera dives in and turns a quarter.
@@ -120,7 +125,7 @@ export default function CityPage() {
     city.current?.focus(building);
   }, []);
 
-  useCityKeyboard({ city, inspection, following, room, popover, photo, immersive, setPhoto, setPopover, setPaused, setTouring, setImmersive });
+  useCityKeyboard({ city, inspection, following, room, popover, photo, immersive, rewound: !live, setPhoto, setPopover, setPaused, setTouring, setImmersive, backToLive: () => setScrub(null) });
 
   const camera = {
     zoom: (direction: number) => city.current?.zoom(direction),
@@ -187,7 +192,10 @@ export default function CityPage() {
             />
             {!room && <CityServiceLabels city={city} sites={sites} selected={service} select={visit} />}
             {!room && selectedSite && <CityServiceCard site={selectedSite} close={() => setService(null)} enter={() => city.current?.enter(selectedSite.building)} />}
-            {!room && <CityFeed items={feed} focus={visit} buildingOf={buildingOf} />}
+            {!room && <CityFeed items={feed} focus={visit} buildingOf={buildingOf} live={live} />}
+            {!room && chronicle.length > 0 && (
+              <CityTimeline events={chronicle} now={now} viewedAt={viewedAt} live={live} onScrub={setScrub} />
+            )}
             <ExploreOverlay
               nearby={nearby}
               room={room}
@@ -233,7 +241,9 @@ function useCityKeyboard(state: {
   popover: CityPopover;
   photo: boolean;
   immersive: boolean;
+  rewound: boolean;
   setPhoto: (value: boolean) => void;
+  backToLive: () => void;
   setPopover: (value: CityPopover) => void;
   setPaused: (update: (value: boolean) => boolean) => void;
   setTouring: (value: boolean) => void;
@@ -257,6 +267,7 @@ function useCityKeyboard(state: {
         else if (s.inspection) s.city.current?.inspect(null);
         else if (s.following) s.city.current?.follow(null);
         else if (s.room) s.city.current?.exit();
+        else if (s.rewound) s.backToLive();
         else if (s.immersive) {
           s.setTouring(false);
           s.city.current?.tour(false);

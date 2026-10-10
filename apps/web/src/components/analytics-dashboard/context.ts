@@ -1,5 +1,5 @@
 import { createContext, useContext } from "react";
-import type { IntelSnapshot } from "@honeyrizons/shared";
+import type { ChronicleEvent, IntelSnapshot } from "@honeyrizons/shared";
 import type { AnalyticsDashboardData } from "./data";
 
 export type AnalyticsDashboardPage = "overview" | "city" | "services" | "sessions" | "settings";
@@ -26,6 +26,8 @@ type DashboardState = {
   status: AnalyticsDashboardStatus;
   /** Automatic triage results from the analyst agent, keyed by session. */
   intel: IntelSnapshot;
+  /** Append-only log of how the attack surface changed. The city replays it. */
+  chronicle: ChronicleEvent[];
   now: number;
   /** Prefix for element ids, unique per dashboard instance. */
   uid: string;

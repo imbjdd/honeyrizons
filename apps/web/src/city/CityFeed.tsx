@@ -10,8 +10,10 @@ export function CityFeed({
   items,
   focus,
   buildingOf,
+  live,
 }: {
   items: FeedItem[];
+  live: boolean;
   focus: (building: BuildingId) => void;
   buildingOf: (s: AnalyticsSession) => BuildingId | undefined;
 }) {
@@ -21,8 +23,8 @@ export function CityFeed({
   return (
     <section className="city-panel city-feed" aria-label="Latest sessions">
       <p className="ai-label city-feed-title">
-        <span className="live-dot" data-live={status.connected} aria-hidden="true" />
-        Live
+        <span className="live-dot" data-live={live && status.connected} aria-hidden="true" />
+        {live ? "Live" : "Replay"}
       </p>
       <ol>
         {items.map(({ session }) => (

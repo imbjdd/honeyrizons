@@ -72,6 +72,10 @@ Frontend code lives in [apps/web/src/city](../../apps/web/src/city/) and renders
   threats carry a severity marker drawn over the buildings at a constant size. New sessions walk in immediately and
   ring the door in their severity color. Clicking an attacker (or its marker) opens its session in the dashboard's
   details panel, and the open session is circled in the street.
+- **The city has a history.** `useCityActivity(viewedAt, live)` builds the city for an instant rather than for now:
+  the chronicle's fold decides which services stood and in what state, and sessions are filtered to that moment.
+  `CityTimeline` scrubs it — drag the handle, use the arrows to step event by event, or Escape to come back to live.
+  A service label dims while nobody has found it and reads "surge" while it is under one.
 - The city is always at night, lit and graded to the dashboard's charcoal background so the canvas edge disappears.
 - `CityCanvas.tsx` / `CityScene.ts` own the three.js scene behind the imperative `CityHandle` API. The scene adapts to
   its container and reports hover positions relative to the canvas.

@@ -7,6 +7,8 @@ import { ANALYST_MODEL, analystEnabled } from "./analyst";
 import { startIntel } from "./intel";
 
 const LOG_PATH = resolve(process.env.LOG_PATH ?? join(import.meta.dir, "../../../logs/beelzebub.log"));
+// Analyst verdicts + threat brief. The log volume is read-only in docker-compose, so this lives elsewhere there.
+const INTEL_PATH = resolve(process.env.INTEL_PATH ?? join(dirname(LOG_PATH), "intel.json"));
 const PORT = Number(process.env.PORT ?? 4000);
 const MAX_EVENTS = Number(process.env.MAX_EVENTS ?? 10000);
 // Where the honeypot itself sits on the map, as "lat,lon". Defaults to Paris.
@@ -102,7 +104,7 @@ function readServices(): HoneypotService[] {
 const intel = startIntel({
   events: () => events,
   publish: (patch) => broadcast(`event: intel\ndata: ${JSON.stringify(patch)}\n\n`),
-  storePath: join(dirname(LOG_PATH), "intel.json"),
+  storePath: INTEL_PATH,
 });
 
 // Keep SSE connections alive through proxies.

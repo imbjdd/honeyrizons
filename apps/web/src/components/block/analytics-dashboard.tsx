@@ -148,6 +148,11 @@ export function AnalyticsDashboard({
 
   useEffect(() => {
     if (scrollRef.current) scrollRef.current.scrollTop = 0;
+    // The city opens full screen; session details come back when an attacker is clicked.
+    if (page === "city") {
+      setCollapsed(true);
+      setPanelOpen(false);
+    }
   }, [page]);
 
   useEffect(() => () => window.clearTimeout(timer.current), []);

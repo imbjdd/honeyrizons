@@ -20,6 +20,11 @@ import {
 import type { CityHandle, CityOptions } from "./model";
 import { AttackerCrowd, SEVERITY_GLOW, type AttackerSpec } from "./attackers";
 
+const INTRO_SECONDS = 2.2;
+const INTRO_ZOOM = 0.55;
+/** Bearing of the opening view, from the target toward the camera. */
+const START_ANGLE = Math.atan2(106, 135);
+
 export class CityScene implements CityHandle {
   private scene = new THREE.Scene();
   private outdoor = new THREE.Group();
@@ -68,6 +73,8 @@ export class CityScene implements CityHandle {
   private targetZoom: number | null = null;
   private angle: number | null = null;
   private touring = false;
+  /** Seconds into the opening shot, or null once it's over: the camera dives in while turning a quarter around the city. */
+  private intro: number | null = null;
   private elapsed = 0;
   private lastTime = 0;
   private pointerDown = { x: 0, y: 0 };
@@ -162,6 +169,11 @@ export class CityScene implements CityHandle {
     canvas.addEventListener("pointerleave", this.onPointerLeave);
     canvas.addEventListener("webglcontextlost", this.onContextLost);
     document.addEventListener("visibilitychange", this.onVisibility);
+    if (!options.reducedMotion) {
+      this.intro = 0;
+      this.camera.zoom = INTRO_ZOOM;
+      this.camera.updateProjectionMatrix();
+    }
     this.renderer.setAnimationLoop(this.animate);
   }
 
@@ -222,8 +234,15 @@ export class CityScene implements CityHandle {
     });
   }
 
+  private endIntro() {
+    if (this.intro === null) return;
+    this.intro = null;
+    this.options.onIntroEnd();
+  }
+
   zoom(direction: number) {
     if (this.walker) return;
+    this.endIntro();
     this.targetZoom = THREE.MathUtils.clamp(
       (this.targetZoom ?? this.camera.zoom) * (direction > 0 ? 1.22 : 0.82),
       this.controls.minZoom,
@@ -231,6 +250,7 @@ export class CityScene implements CityHandle {
     );
   }
   rotate(direction: number) {
+    this.endIntro();
     if (this.walker) {
       this.walker.navigation.yaw -= (direction * Math.PI) / 4;
       this.dirty = true;
@@ -241,6 +261,7 @@ export class CityScene implements CityHandle {
     this.angle = Math.atan2(offset.x, offset.z) + (direction * Math.PI) / 4;
   }
   home() {
+    this.endIntro();
     this.touring = false;
     if (this.room) this.exit();
     this.follow(null);
@@ -249,6 +270,7 @@ export class CityScene implements CityHandle {
     this.angle = Math.atan2(85, 104);
   }
   focus(id: BuildingId) {
+    this.endIntro();
     if (this.room) this.exit();
     this.follow(null);
     const [x, , z] = getBuilding(id).position;
@@ -257,6 +279,7 @@ export class CityScene implements CityHandle {
     this.targetZoom = 1.55;
   }
   tour(enabled: boolean) {
+    this.endIntro();
     if (enabled && this.room) this.exit();
     this.follow(null);
     this.touring = enabled && !this.options.reducedMotion;
@@ -320,6 +343,7 @@ export class CityScene implements CityHandle {
         target: this.controls.target.clone(),
         zoom: this.camera.zoom,
       };
+    this.endIntro();
     this.follow(null);
     this.touring = false;
     this.target = null;
@@ -527,6 +551,8 @@ export class CityScene implements CityHandle {
   }
 
   private cancelTransition = () => {
+    // Freezes the opening shot where it is, so a click lands on the building under the cursor.
+    this.endIntro();
     this.target = null;
     this.targetZoom = null;
     this.angle = null;
@@ -732,14 +758,29 @@ export class CityScene implements CityHandle {
     this.camera.updateProjectionMatrix();
     this.renderer.setSize(width, height, false);
     this.composer.setSize(width, height);
-    this.dirty = true;
+    // Resizing clears the canvas; draw right away so a growing stage never flashes empty.
+    this.render();
   };
+
+  /** Places the camera at time t of the opening shot: zooming in from afar while turning a quarter circle. */
+  private playIntro(t: number) {
+    const p = Math.min(t / INTRO_SECONDS, 1);
+    const turn = 1 - Math.pow(1 - p, 3);
+    const dive = p < 0.5 ? 4 * p * p * p : 1 - Math.pow(-2 * p + 2, 3) / 2;
+    const offset = this.camera.position.clone().sub(this.controls.target);
+    const radius = Math.hypot(offset.x, offset.z);
+    const angle = START_ANGLE - (1 - turn) * (Math.PI / 2);
+    this.camera.position.x = this.controls.target.x + Math.sin(angle) * radius;
+    this.camera.position.z = this.controls.target.z + Math.cos(angle) * radius;
+    this.camera.zoom = THREE.MathUtils.lerp(INTRO_ZOOM, 1, dive);
+    this.camera.updateProjectionMatrix();
+    return p >= 1;
+  }
 
   private animate = (time: number) => {
     if (this.disposed) return;
-    const dt = this.lastTime
-      ? Math.min((time - this.lastTime) / 1000, 0.05)
-      : 0;
+    const frameTime = this.lastTime ? (time - this.lastTime) / 1000 : 0;
+    const dt = Math.min(frameTime, 0.05);
     this.lastTime = time;
     const moving = !this.options.paused && !this.options.reducedMotion;
     if (moving) this.elapsed += dt;
@@ -764,6 +805,11 @@ export class CityScene implements CityHandle {
         }
       }
       this.dirty ||= walked;
+    }
+    if (this.intro !== null) {
+      // Wall-clock time, so the shot keeps its length on slow GPUs.
+      this.intro += Math.min(frameTime, 0.25);
+      if (this.playIntro(this.intro)) this.endIntro();
     }
     const lerp = this.options.reducedMotion ? 1 : 1 - Math.exp(-dt * 5);
     if (this.following) {
@@ -882,6 +928,7 @@ export class CityScene implements CityHandle {
       moving ||
       cameraChanged ||
       this.dirty ||
+      this.intro !== null ||
       this.target ||
       this.targetZoom !== null ||
       this.angle !== null ||

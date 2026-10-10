@@ -102,6 +102,81 @@
   padding: 12px 14px;
 }
 
+/* ───────── Opening shot ─────────
+   On arrival the city slowly takes over the window: rail, title bar and margins give way while the camera dives in
+   and turns a quarter. Esc or the toolbar brings the dashboard back. */
+
+.obsidian-analytics-dashboard:has(.city-page) {
+  --city-grow: 700ms cubic-bezier(0.65, 0, 0.35, 1);
+  transition: padding var(--city-grow);
+}
+
+.obsidian-analytics-dashboard:has(.city-page) .window {
+  transition:
+    grid-template-columns var(--city-grow),
+    border-radius var(--city-grow),
+    box-shadow var(--city-grow);
+}
+
+.obsidian-analytics-dashboard:has(.city-page) .main {
+  transition:
+    margin var(--city-grow),
+    border-radius var(--city-grow),
+    box-shadow var(--city-grow);
+}
+
+.obsidian-analytics-dashboard:has(.city-page) .main-bar {
+  overflow: clip;
+  transition:
+    height var(--city-grow),
+    opacity 300ms ease;
+}
+
+.obsidian-analytics-dashboard:has(.city-page) .rail {
+  transition:
+    opacity 300ms ease,
+    visibility 0s;
+}
+
+.obsidian-analytics-dashboard:has(.city-page[data-immersive="true"]) {
+  padding: 0;
+}
+
+.obsidian-analytics-dashboard:has(.city-page[data-immersive="true"]) .window {
+  --rail-w: 0px;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.obsidian-analytics-dashboard:has(.city-page[data-immersive="true"]) .main {
+  margin: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
+
+.obsidian-analytics-dashboard:has(.city-page[data-immersive="true"]) .main-bar {
+  height: 0;
+  opacity: 0;
+}
+
+.obsidian-analytics-dashboard:has(.city-page[data-immersive="true"]) .rail {
+  opacity: 0;
+  visibility: hidden;
+  transition:
+    opacity 300ms ease,
+    visibility 0s 300ms;
+}
+
+/* The interface waits for the shot to finish, then fades in. */
+.obsidian-analytics-dashboard .city-stage > :is(.city-toolbar, .city-labels, .city-feed) {
+  transition: opacity 300ms ease;
+}
+
+.obsidian-analytics-dashboard .city-stage.is-intro > :is(.city-toolbar, .city-labels, .city-feed) {
+  opacity: 0;
+  pointer-events: none;
+}
+
 /* ───────── Toolbar (top right) ───────── */
 
 .obsidian-analytics-dashboard .city-toolbar {

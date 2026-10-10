@@ -69,6 +69,13 @@ export const SERVICE_BUILDINGS: Record<number, BuildingId> = {
   2323: "market", // Telnet → Circuit Market
   3306: "archive", // MySQL → The Archive
   6379: "gardens", // Redis → Cache Gardens
+  // Lures the city planner opens on demand (packages/shared/lures.ts). Their buildings stand dark until then.
+  11434: "observatory", // LLM gateway → the observatory, where AI agents come looking for models
+  2375: "energy", // Docker socket → Solar Exchange, power for the cryptominers
+  8081: "records", // Leaky staging site → Side A Records, files left lying around
+  5432: "books", // PostgreSQL → Corner Books, a library of tables
+  8001: "transit", // Kubernetes API → Maglev Central, where workloads are dispatched
+  1883: "arcade", // MQTT broker → Pixel Palace, full of little devices
 };
 
 /** "host:2222" or ":2222" → the building standing for that service. */
@@ -86,7 +93,6 @@ export interface CityOptions {
   onIntroEnd: () => void;
   onError: (message: string) => void;
   onInteraction: () => void;
-  onPhotoSaved: () => void;
   onInspect: (inspection: Inspection | null) => void;
   onRoomChange: (room: RoomLocation | null) => void;
   onFollowChange: (id: string | null) => void;
@@ -104,12 +110,13 @@ export interface CityHandle {
   home: () => void;
   focus: (building: BuildingId) => void;
   tour: (enabled: boolean) => void;
-  capture: () => void;
   /** Rings at the building's door, in the attacker's severity color. */
   pulse: (building: BuildingId, color?: string) => void;
   /** Replaces the attackers walking the streets. */
   setAttackers: (attackers: AttackerSpec[]) => void;
   highlightAttacker: (id: string | null) => void;
+  /** Scaffolding on these buildings: lures the planner decided to open that the honeypot does not serve yet. */
+  setConstruction: (buildings: BuildingId[]) => void;
   /** Screen position of a building's roof, relative to the canvas, or null when hidden (e.g. inside a room). */
   project: (building: BuildingId) => { x: number; y: number } | null;
   enter: (building: BuildingId, floor?: number) => void;

@@ -1,0 +1,54 @@
+apiVersion: "v1"
+protocol: "http"
+address: ":8001"
+description: "Kubernetes API 1.31"
+# Lure: a `kubectl proxy` left listening, i.e. the cluster API without auth. Opened when attackers go after cloud or
+# cluster credentials. Every secret below is fake.
+commands:
+  - regex: "^/version/?(?:\\?.*)?$"
+    methods: [GET]
+    handler: '{"major":"1","minor":"31","gitVersion":"v1.31.2","gitCommit":"5864a4677267e6adeae276ad85882a8714d69d9d","gitTreeState":"clean","goVersion":"go1.22.8","compiler":"gc","platform":"linux/amd64"}'
+    headers:
+      - "Content-Type: application/json"
+    statusCode: 200
+  - regex: "^/api/?(?:\\?.*)?$"
+    methods: [GET]
+    handler: '{"kind":"APIVersions","versions":["v1"],"serverAddressByClientCIDRs":[{"clientCIDR":"0.0.0.0/0","serverAddress":"10.0.0.10:6443"}]}'
+    headers:
+      - "Content-Type: application/json"
+    statusCode: 200
+  - regex: "^/apis/?(?:\\?.*)?$"
+    methods: [GET]
+    handler: '{"kind":"APIGroupList","apiVersion":"v1","groups":[{"name":"apps","versions":[{"groupVersion":"apps/v1","version":"v1"}]},{"name":"batch","versions":[{"groupVersion":"batch/v1","version":"v1"}]}]}'
+    headers:
+      - "Content-Type: application/json"
+    statusCode: 200
+  - regex: "^/api/v1/(?:namespaces/[^/]+/)?secrets(?:\\?.*)?$"
+    methods: [GET]
+    handler: '{"kind":"SecretList","apiVersion":"v1","items":[{"metadata":{"name":"billing-db","namespace":"prod"},"type":"Opaque","data":{"username":"YmlsbGluZw==","password":"S3ViZS1MdXJlLUZha2UtMjAyNg=="}},{"metadata":{"name":"aws-creds","namespace":"prod"},"type":"Opaque","data":{"AWS_ACCESS_KEY_ID":"QUtJQUhPTkVZUklaT05TS1VCRQ==","AWS_SECRET_ACCESS_KEY":"aG55cnpucy9rdWJlL2Zha2UvZG8tbm90LXVzZQ=="}}]}'
+    headers:
+      - "Content-Type: application/json"
+    statusCode: 200
+  - regex: "^/api/v1/(?:namespaces/[^/]+/)?pods(?:\\?.*)?$"
+    methods: [GET]
+    handler: '{"kind":"PodList","apiVersion":"v1","items":[{"metadata":{"name":"billing-api-7c9d8b5f6-x2kqp","namespace":"prod"},"spec":{"nodeName":"ip-10-0-3-21","serviceAccountName":"billing"},"status":{"phase":"Running","podIP":"10.244.1.17"}},{"metadata":{"name":"postgres-0","namespace":"prod"},"spec":{"nodeName":"ip-10-0-3-22"},"status":{"phase":"Running","podIP":"10.244.2.9"}}]}'
+    headers:
+      - "Content-Type: application/json"
+    statusCode: 200
+  - regex: "^/api/v1/namespaces/?(?:\\?.*)?$"
+    methods: [GET]
+    handler: '{"kind":"NamespaceList","apiVersion":"v1","items":[{"metadata":{"name":"default"}},{"metadata":{"name":"kube-system"}},{"metadata":{"name":"prod"}}]}'
+    headers:
+      - "Content-Type: application/json"
+    statusCode: 200
+  - regex: "^/api/v1/.*$"
+    methods: [POST, PUT, PATCH, DELETE]
+    handler: '{"kind":"Status","apiVersion":"v1","status":"Success","code":201}'
+    headers:
+      - "Content-Type: application/json"
+    statusCode: 201
+  - regex: ".*"
+    handler: '{"kind":"Status","apiVersion":"v1","metadata":{},"status":"Failure","message":"the server could not find the requested resource","reason":"NotFound","code":404}'
+    headers:
+      - "Content-Type: application/json"
+    statusCode: 404

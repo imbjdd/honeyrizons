@@ -1,0 +1,71 @@
+apiVersion: "v1"
+protocol: "http"
+address: ":2375"
+description: "Docker Engine 27.3.1"
+# Lure: an unauthenticated Docker socket, the cryptominers' favourite door. Opened when miners or Docker hunters show up.
+commands:
+  - regex: "^(?:/v1\\.\\d+)?/_ping(?:\\?.*)?$"
+    methods: [GET, HEAD]
+    handler: "OK"
+    headers:
+      - "Content-Type: text/plain; charset=utf-8"
+      - "Api-Version: 1.47"
+      - "Docker-Experimental: false"
+      - "Ostype: linux"
+      - "Server: Docker/27.3.1 (linux)"
+    statusCode: 200
+  - regex: "^(?:/v1\\.\\d+)?/version(?:\\?.*)?$"
+    methods: [GET]
+    handler: '{"Platform":{"Name":"Docker Engine - Community"},"Version":"27.3.1","ApiVersion":"1.47","MinAPIVersion":"1.24","GitCommit":"41ca978","GoVersion":"go1.22.7","Os":"linux","Arch":"amd64","KernelVersion":"5.15.0-122-generic","BuildTime":"2024-09-20T11:41:11.000000000+00:00"}'
+    headers:
+      - "Content-Type: application/json"
+      - "Api-Version: 1.47"
+      - "Server: Docker/27.3.1 (linux)"
+    statusCode: 200
+  - regex: "^(?:/v1\\.\\d+)?/info(?:\\?.*)?$"
+    methods: [GET]
+    handler: '{"ID":"7TRN:IPZB:QYBB:VPBQ:UWUD:JTW6:MOOV:BLAH","Containers":3,"ContainersRunning":2,"Images":7,"Driver":"overlay2","OperatingSystem":"Ubuntu 22.04.5 LTS","OSType":"linux","Architecture":"x86_64","NCPU":16,"MemTotal":67430219776,"Name":"build-runner-02","ServerVersion":"27.3.1"}'
+    headers:
+      - "Content-Type: application/json"
+      - "Api-Version: 1.47"
+      - "Server: Docker/27.3.1 (linux)"
+    statusCode: 200
+  - regex: "^(?:/v1\\.\\d+)?/containers/json(?:\\?.*)?$"
+    methods: [GET]
+    handler: '[{"Id":"8dfafdbc3a40","Names":["/ci-runner"],"Image":"gitlab/gitlab-runner:v17.4.0","State":"running","Status":"Up 12 days"},{"Id":"a1c2e3f4b5d6","Names":["/postgres"],"Image":"postgres:16","State":"running","Status":"Up 12 days"}]'
+    headers:
+      - "Content-Type: application/json"
+      - "Api-Version: 1.47"
+      - "Server: Docker/27.3.1 (linux)"
+    statusCode: 200
+  - regex: "^(?:/v1\\.\\d+)?/images/json(?:\\?.*)?$"
+    methods: [GET]
+    handler: '[{"Id":"sha256:4bd6cbf2d094","RepoTags":["alpine:3.20"],"Size":7800000},{"Id":"sha256:c0df3564cfe8","RepoTags":["postgres:16"],"Size":432000000}]'
+    headers:
+      - "Content-Type: application/json"
+      - "Api-Version: 1.47"
+      - "Server: Docker/27.3.1 (linux)"
+    statusCode: 200
+  - regex: "^(?:/v1\\.\\d+)?/containers/create(?:\\?.*)?$"
+    methods: [POST]
+    handler: '{"Id":"e90e34656806","Warnings":[]}'
+    headers:
+      - "Content-Type: application/json"
+      - "Api-Version: 1.47"
+      - "Server: Docker/27.3.1 (linux)"
+    statusCode: 201
+  - regex: "^(?:/v1\\.\\d+)?/(?:containers/[^/]+/(?:start|exec|attach|wait)|exec/[^/]+/start|images/create)(?:\\?.*)?$"
+    methods: [POST]
+    handler: '{}'
+    headers:
+      - "Content-Type: application/json"
+      - "Api-Version: 1.47"
+      - "Server: Docker/27.3.1 (linux)"
+    statusCode: 200
+  - regex: ".*"
+    handler: '{"message":"page not found"}'
+    headers:
+      - "Content-Type: application/json"
+      - "Api-Version: 1.47"
+      - "Server: Docker/27.3.1 (linux)"
+    statusCode: 404

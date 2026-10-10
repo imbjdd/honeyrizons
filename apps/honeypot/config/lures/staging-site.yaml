@@ -1,0 +1,81 @@
+apiVersion: "v1"
+protocol: "http"
+address: ":8081"
+description: "Laravel staging"
+# Lure: a staging app that leaks its .env and .git. Opened when attackers go looking for secrets in files.
+# Every credential below is fake and exists only so its reuse elsewhere can be spotted.
+commands:
+  - regex: "^/\\.env(?:\\.\\w+)?(?:\\?.*)?$"
+    methods: [GET, HEAD]
+    handler: |
+      APP_NAME=Billing
+      APP_ENV=staging
+      APP_KEY=base64:2fl+Ktvkfl+Fuz4Qp/A75G2RTiWVA/ZoKZvp6fiiM10=
+      APP_DEBUG=true
+      APP_URL=https://staging.billing.internal
+
+      DB_CONNECTION=pgsql
+      DB_HOST=10.0.3.12
+      DB_PORT=5432
+      DB_DATABASE=billing
+      DB_USERNAME=billing
+      DB_PASSWORD=St4ging-B1lling-2026
+
+      AWS_ACCESS_KEY_ID=AKIAHONEYRIZONS7LURE
+      AWS_SECRET_ACCESS_KEY=hnyrzns/fake/do-not-use/8f3c2a1d9e7b6a5c4d3e
+      AWS_DEFAULT_REGION=eu-west-3
+      AWS_BUCKET=billing-staging-invoices
+
+      STRIPE_SECRET=sk_test_honeyrizons_lure_fake
+      MAIL_PASSWORD=smtp-fake-honeyrizons
+    headers:
+      - "Content-Type: text/plain; charset=UTF-8"
+      - "Server: nginx/1.24.0 (Ubuntu)"
+    statusCode: 200
+  - regex: "^/\\.git/config(?:\\?.*)?$"
+    methods: [GET, HEAD]
+    handler: |
+      [core]
+      	repositoryformatversion = 0
+      	filemode = true
+      	bare = false
+      [remote "origin"]
+      	url = https://deploy-bot:ghp_honeyrizonsFakeLureToken0000000000@github.com/acme-billing/billing.git
+      	fetch = +refs/heads/*:refs/remotes/origin/*
+      [branch "staging"]
+      	remote = origin
+      	merge = refs/heads/staging
+    headers:
+      - "Content-Type: text/plain; charset=UTF-8"
+      - "Server: nginx/1.24.0 (Ubuntu)"
+    statusCode: 200
+  - regex: "^/\\.git/HEAD(?:\\?.*)?$"
+    methods: [GET, HEAD]
+    handler: "ref: refs/heads/staging\n"
+    headers:
+      - "Content-Type: text/plain; charset=UTF-8"
+      - "Server: nginx/1.24.0 (Ubuntu)"
+    statusCode: 200
+  - regex: "^/(?:phpinfo|info|test)\\.php(?:\\?.*)?$"
+    methods: [GET, HEAD]
+    handler: "<html><head><title>PHP 8.2.24 - phpinfo()</title></head><body><h1>PHP Version 8.2.24</h1><table><tr><td>System</td><td>Linux staging-billing 5.15.0-122-generic x86_64</td></tr><tr><td>DOCUMENT_ROOT</td><td>/var/www/billing/public</td></tr></table></body></html>"
+    headers:
+      - "Content-Type: text/html; charset=UTF-8"
+      - "Server: nginx/1.24.0 (Ubuntu)"
+      - "X-Powered-By: PHP/8.2.24"
+    statusCode: 200
+  - regex: "^/(?:\\?.*)?$"
+    methods: [GET, HEAD]
+    handler: "<!doctype html><html><head><title>Billing · Staging</title></head><body><h1>Billing</h1><p>Staging environment. Sign in with your Acme account.</p></body></html>"
+    headers:
+      - "Content-Type: text/html; charset=UTF-8"
+      - "Server: nginx/1.24.0 (Ubuntu)"
+      - "X-Powered-By: PHP/8.2.24"
+      - "Set-Cookie: laravel_session=eyJpdiI6IlR3b2ZhIn0%3D; path=/; httponly"
+    statusCode: 200
+  - regex: ".*"
+    handler: "<!doctype html><html><head><title>Not Found</title></head><body><h1>404 Not Found</h1></body></html>"
+    headers:
+      - "Content-Type: text/html; charset=UTF-8"
+      - "Server: nginx/1.24.0 (Ubuntu)"
+    statusCode: 404

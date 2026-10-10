@@ -10,7 +10,8 @@ locals {
   image_tag = local.is_prod ? "latest" : var.environment
   vpc_cidr  = local.is_prod ? "10.42.0.0/16" : "10.43.0.0/16"
   sub_cidr  = local.is_prod ? "10.42.1.0/24" : "10.43.1.0/24"
-  ports     = [22, 23, 80, 3306, 6379, 8000]
+  # Core services, then the lures the city planner may open.
+  ports     = [22, 23, 80, 3306, 6379, 8000, 11434, 2375, 8081, 5432, 8001, 1883]
 }
 
 data "aws_ssm_parameter" "al2023" {

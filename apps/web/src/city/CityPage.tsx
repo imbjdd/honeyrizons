@@ -1,41 +1,28 @@
 import { useCallback, useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import { cn } from "@/lib/utils";
 import { useDashboard } from "@/components/analytics-dashboard/context";
-import { Segmented } from "@/components/analytics-dashboard/ui";
 import { SEVERITY_GLOW } from "./attackers";
 import CityCanvas from "./CityCanvas";
-import { CityFeed } from "./CityFeed";
+import { CityPlanner } from "./CityPlanner";
 import { CityServiceCard } from "./CityServiceCard";
 import { CityServiceLabels } from "./CityServiceLabels";
-import { CityTimeline } from "./CityTimeline";
-import { CityToolbar, type CityPopover } from "./CityToolbar";
+import { CityToolbar } from "./CityToolbar";
 import ExploreOverlay from "./ExploreOverlay";
 import type { BuildingId, HoverTarget, Inspection, RoomLocation } from "./explore";
 import { useCitySound, useReducedMotion } from "./hooks";
 import type { CityHandle, CityOptions } from "./model";
-import { useCityActivity } from "./useCityActivity";
+import { useCityActivity, type LureSite } from "./useCityActivity";
+import type { ChronicleEvent } from "@honeyrizons/shared";
 import "./city.css";
-
-const PHOTO_FILTERS = [
-  { id: "normal", label: "Original" },
-  { id: "noir", label: "Noir" },
-  { id: "warm", label: "Golden" },
-] as const;
-
-type PhotoFilter = (typeof PHOTO_FILTERS)[number]["id"];
 
 /** The honeypot as a living city: each service is a building, each recent attack a person walking to its door. */
 export default function CityPage() {
-  const { openSession, selected, chronicle, now } = useDashboard();
+  const { openSession, selected, chronicle } = useDashboard();
   const city = useRef<CityHandle | null>(null);
   const reducedMotion = useReducedMotion();
   const [paused, setPaused] = useState(false);
   const sound = useCitySound();
-  // Null while the timeline is live; a past instant once it has been scrubbed back.
-  const [scrub, setScrub] = useState<number | null>(null);
-  const live = scrub === null;
-  const viewedAt = scrub ?? now;
-  const { sites, attackers, feed, latest, buildingOf } = useCityActivity(viewedAt, live);
+  const { sites, attackers, latest, lures, construction } = useCityActivity();
 
   const [ready, setReady] = useState(false);
   // Opening shot: the city takes over the window while the camera dives in and turns a quarter.
@@ -49,9 +36,6 @@ export default function CityPage() {
   const [hover, setHover] = useState<HoverTarget | null>(null);
   const [service, setService] = useState<BuildingId | null>(null);
   const [touring, setTouring] = useState(false);
-  const [photo, setPhoto] = useState(false);
-  const [photoFilter, setPhotoFilter] = useState<PhotoFilter>("normal");
-  const [popover, setPopover] = useState<CityPopover>(null);
   const [notice, setNotice] = useState("");
   const noticeTimer = useRef<number | undefined>(undefined);
 
@@ -62,13 +46,8 @@ export default function CityPage() {
   }, []);
   useEffect(() => () => window.clearTimeout(noticeTimer.current), []);
 
-  const onInspect = useCallback((value: Inspection | null) => {
-    setInspection(value);
-    if (value) setPopover(null);
-  }, []);
   const onRoomChange = useCallback((value: RoomLocation | null) => {
     setRoom(value);
-    setPopover(null);
     setTouring(false);
   }, []);
   const onReady = useCallback(() => setReady(true), []);
@@ -81,27 +60,25 @@ export default function CityPage() {
     return () => cancelAnimationFrame(frame);
   }, [ready]);
   const onInteraction = useCallback(() => setTouring(false), []);
-  const onPhotoSaved = useCallback(() => announce("Your city photo is downloading."), [announce]);
   const onAttacker = useCallback((id: string) => openSession(id), [openSession]);
 
   const options = useMemo<CityOptions>(
     () => ({
       paused,
       reducedMotion,
-      inputBlocked: !!inspection || !!popover,
+      inputBlocked: !!inspection,
       onNearby: setNearby,
       onReady,
       onIntroEnd,
       onError: setError,
       onInteraction,
-      onPhotoSaved,
-      onInspect,
+      onInspect: setInspection,
       onRoomChange,
       onFollowChange: setFollowing,
       onHover: setHover,
       onAttacker,
     }),
-    [paused, reducedMotion, inspection, popover, onReady, onIntroEnd, onInteraction, onPhotoSaved, onInspect, onRoomChange, onAttacker],
+    [paused, reducedMotion, inspection, onReady, onIntroEnd, onInteraction, onRoomChange, onAttacker],
   );
 
   // People in the streets follow the honeypot's recent sessions.
@@ -114,6 +91,20 @@ export default function CityPage() {
     if (ready && latest) city.current?.pulse(latest.building, SEVERITY_GLOW[latest.severity]);
   }, [latest?.key, ready]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  // Lures the planner decided on but the honeypot does not serve yet stand in scaffolding.
+  useEffect(() => {
+    if (ready) city.current?.setConstruction(construction);
+  }, [construction.join(), ready]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const plannerNews = useCallback(
+    (building: BuildingId, text: string) => {
+      city.current?.pulse(building, LURE_GLOW);
+      announce(text);
+    },
+    [announce],
+  );
+  usePlannerNews(chronicle, ready, lures, plannerNews);
+
   // The session open in the details panel is circled in the street.
   useEffect(() => {
     if (ready) city.current?.highlightAttacker(selected);
@@ -125,37 +116,19 @@ export default function CityPage() {
     city.current?.focus(building);
   }, []);
 
-  useCityKeyboard({ city, inspection, following, room, popover, photo, immersive, rewound: !live, setPhoto, setPopover, setPaused, setTouring, setImmersive, backToLive: () => setScrub(null) });
-
-  const camera = {
-    zoom: (direction: number) => city.current?.zoom(direction),
-    rotate: (direction: number) => {
-      city.current?.rotate(direction);
-      setTouring(false);
-    },
-    home: () => {
-      city.current?.home();
-      setService(null);
-      setTouring(false);
-    },
-    tour: () => {
-      const next = !touring;
-      setTouring(next);
-      city.current?.tour(next);
-      setPopover(null);
-    },
-  };
+  useCityKeyboard({ city, inspection, following, room, immersive, setPaused, setTouring, setImmersive });
 
   const selectedSite = sites.find((s) => s.building === service);
+  const selectedLure = lures.find((l) => l.building === service && l.state.status !== "retired");
 
   return (
     <div className="page-content city-page" data-immersive={immersive}>
       <section
-        className={cn("city-stage enter", photo && "is-photo", room && "in-room", intro && "is-intro")}
+        className={cn("city-stage enter", room && "in-room", intro && "is-intro")}
         style={{ "--i": 1 } as CSSProperties}
         aria-label="Honeyrizons city"
       >
-        <div className={`city-world filter-${photoFilter}`}>
+        <div className="city-world">
           <CityCanvas options={options} handle={city} />
         </div>
 
@@ -169,33 +142,41 @@ export default function CityPage() {
           </div>
         )}
 
-        {ready && !photo && (
+        {ready && (
           <>
             <CityToolbar
               room={!!room}
-              camera={camera}
+              home={() => {
+                city.current?.home();
+                setService(null);
+                setTouring(false);
+              }}
+              tour={() => {
+                setTouring(!touring);
+                city.current?.tour(!touring);
+              }}
               touring={touring}
               tourDisabled={reducedMotion}
               paused={paused}
               togglePause={() => setPaused((v) => !v)}
               sound={sound.enabled}
               toggleSound={() => void sound.toggle().catch(() => announce("Sound is unavailable in this browser."))}
-              startPhoto={() => {
-                setPhoto(true);
-                setPopover(null);
-              }}
-              popover={popover}
-              setPopover={setPopover}
-              enterBuilding={(id) => city.current?.enter(id)}
               immersive={immersive}
               toggleImmersive={() => setImmersive((v) => !v)}
             />
-            {!room && <CityServiceLabels city={city} sites={sites} selected={service} select={visit} />}
-            {!room && selectedSite && <CityServiceCard site={selectedSite} close={() => setService(null)} enter={() => city.current?.enter(selectedSite.building)} />}
-            {!room && <CityFeed items={feed} focus={visit} buildingOf={buildingOf} live={live} />}
-            {!room && chronicle.length > 0 && (
-              <CityTimeline events={chronicle} now={now} viewedAt={viewedAt} live={live} onScrub={setScrub} />
+            {!room && (
+              <CityServiceLabels
+                city={city}
+                sites={sites}
+                construction={lures.filter((l) => l.state.status === "planned")}
+                selected={service}
+                select={visit}
+              />
             )}
+            {!room && (selectedSite || selectedLure) && (
+              <CityServiceCard site={selectedSite} lure={selectedLure} close={() => setService(null)} />
+            )}
+            {!room && !inspection && <CityPlanner lures={lures} focus={visit} announce={announce} />}
             <ExploreOverlay
               nearby={nearby}
               room={room}
@@ -210,18 +191,6 @@ export default function CityPage() {
           </>
         )}
 
-        {photo && (
-          <div className="city-photo-bar" role="toolbar" aria-label="Photo mode">
-            <Segmented label="Photo filter" options={PHOTO_FILTERS} value={photoFilter} onChange={setPhotoFilter} />
-            <button type="button" className="btn btn-primary press" onClick={() => city.current?.capture()}>
-              Save photo
-            </button>
-            <button type="button" className="btn press" onClick={() => setPhoto(false)}>
-              Done
-            </button>
-          </div>
-        )}
-
         {notice && (
           <p className="city-toast swap-in" role="status">
             {notice}
@@ -232,19 +201,48 @@ export default function CityPage() {
   );
 }
 
+/** Planner events older than this are history, not news. */
+const NEWS_MS = 60_000;
+
+/** Gold, like the planner's markers on the timeline. */
+const LURE_GLOW = "#ffcf4a";
+
+/** Rings the door and says so when the planner breaks ground, opens a lure or closes one, live. */
+function usePlannerNews(
+  chronicle: ChronicleEvent[],
+  active: boolean,
+  lures: LureSite[],
+  notify: (building: BuildingId, text: string) => void,
+) {
+  const seen = useRef<number | null>(null);
+  useEffect(() => {
+    const newest = chronicle.at(-1)?.at ?? 0;
+    // Whatever was already in the chronicle when the city opened is history, not news.
+    if (seen.current === null || !active) {
+      seen.current = newest;
+      return;
+    }
+    // The chronicle can land after the page opens, so "new to this page" is not enough: it must also be recent.
+    const fresh = chronicle.filter((e) => e.at > seen.current! && e.at > Date.now() - NEWS_MS);
+    seen.current = Math.max(seen.current, newest);
+    for (const e of fresh) {
+      const lure = e.type === "lure.planned" || e.type === "lure.retired" ? e.lure : e.type === "service.exposed" ? e.lure : undefined;
+      const building = lure ? lures.find((l) => l.blueprint.id === lure)?.building : undefined;
+      if (!building) continue;
+      if (e.type === "lure.planned") notify(building, `City planner: building ${e.name}. ${e.reason}.`);
+      if (e.type === "service.exposed") notify(building, `${e.name} is open. The lure is live.`);
+      if (e.type === "lure.retired") notify(building, e.manual ? `${e.name} closed.` : `${e.name} closed: ${e.reason.toLowerCase()}.`);
+    }
+  }, [chronicle, active, lures, notify]);
+}
+
 /** Keyboard shortcuts while the city page is open. Escape unwinds the most recent layer first. */
 function useCityKeyboard(state: {
   city: React.RefObject<CityHandle | null>;
   inspection: Inspection | null;
   following: string | null;
   room: RoomLocation | null;
-  popover: CityPopover;
-  photo: boolean;
   immersive: boolean;
-  rewound: boolean;
-  setPhoto: (value: boolean) => void;
-  backToLive: () => void;
-  setPopover: (value: CityPopover) => void;
   setPaused: (update: (value: boolean) => boolean) => void;
   setTouring: (value: boolean) => void;
   setImmersive: (value: boolean) => void;
@@ -262,12 +260,9 @@ function useCityKeyboard(state: {
 
       if (event.key === "Escape") {
         if (document.pointerLockElement) return;
-        if (s.photo) s.setPhoto(false);
-        else if (s.popover) s.setPopover(null);
-        else if (s.inspection) s.city.current?.inspect(null);
+        if (s.inspection) s.city.current?.inspect(null);
         else if (s.following) s.city.current?.follow(null);
         else if (s.room) s.city.current?.exit();
-        else if (s.rewound) s.backToLive();
         else if (s.immersive) {
           s.setTouring(false);
           s.city.current?.tour(false);

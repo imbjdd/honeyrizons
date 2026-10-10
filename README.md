@@ -98,10 +98,65 @@ log from traffic it already has and appends only what is new:
 
 Events are backdated to the traffic that caused them, never to the tick that noticed, and clamped so nothing can
 happen to a service before it was exposed. `foldChronicle(events, until)` replays the city exactly as it stood at any
-instant, which is what the timeline scrubs through: service states, session counts and the attackers in the streets
-all rewind together. The log lives in `logs/chronicle.json` and keeps 30 days.
+instant; the city shows its fold up to now. The log lives in `logs/chronicle.json` and keeps 30 days.
 
 Rules and replay are covered by `bun test tests/chronicle.test.ts`.
+
+## City planner
+
+The attack surface is not fixed: the city grows toward what attackers are looking for. The planner reads the same
+sessions and verdicts as the chronicle and looks for demand the honeypot does not serve yet, then opens a **lure** for
+it from a fixed catalog (`apps/honeypot/config/lures/`, listed in `packages/shared/src/lures.ts`):
+
+| Lure | Port | Built when attackers… | Building |
+| --- | --- | --- | --- |
+| LLM gateway (Ollama) | 11434 | probe LLM APIs, hunt API keys, run AI agents against the MCP bait | Orbit Observatory |
+| Docker socket | 2375 | drop cryptominers, reach for `docker`, call the Docker API | Solar Exchange |
+| Leaky staging site | 8081 | scan for `.env`, `.git`, config backups, read secrets from files | Side A Records |
+| PostgreSQL | 5432 | log in as `postgres`, use `psql`, dump other databases | Corner Books |
+| Kubernetes API | 8001 | run `kubectl`, query cloud metadata, ask agents for cloud keys | Maglev Central |
+| MQTT broker | 1883 | push Mirai-style payloads, try default IoT passwords | Pixel Palace |
+
+How it decides (`apps/api/src/planner.ts`, pure and covered by `bun test tests/planner.test.ts`):
+
+- **Demand**: each signal has a weight (1 circumstantial … 4 asks for exactly this service). Each address counts once
+  per lure with its strongest signal, plus a bonus for a severe analyst verdict, so one loud scanner cannot build a lure
+  alone. A lure is built at a score of 10, from the last 7 days of traffic.
+- **Pace**: one new lure every 20 minutes at most, 4 standing at once (`PLANNER_MAX_LURES`).
+- **Pruning**: an open lure that catches nothing for 3 days is closed. It reopens only on demand gathered *after* it
+  closed, and not within a day. A lure the honeypot never comes to serve is given up after 30 minutes.
+
+Every decision is a chronicle event (`lure.planned`, `lure.retired`, and `service.exposed` with its `lure`), so the
+city's growth is part of its history like everything else. Planned lures stand in scaffolding with a crane until the
+honeypot actually serves them; the City planner panel lists them with what they caught, and a building's card says why
+its lure was opened. `GET /api/planner` has the full demand, attacker inputs included.
+
+Deciding and doing are separate. The API only copies catalog configs into the annex directory; nothing an attacker sends
+ever reaches a config. Beelzebub does not reload services, so the honeypot runs under `apps/honeypot/scripts/supervise.sh`:
+the core services in one process, the lures in a second ("annex") that restarts when the directory changes (dropping
+open annex sessions, never core ones). Once the annex is up it writes the lures it loaded to `logs/annex.txt`, and only
+then does `/api/services` report them. In Docker the two containers share the `annex` volume, and every lure port is
+published in advance; nothing listens on it until the lure opens.
+
+`CITY_PLANNER` (in `apps/api/.env`) picks the mode: `auto` (default) builds lures itself, `propose` only suggests
+them, and `off` keeps the surface fixed. In propose mode the City planner panel lists each suggestion with the demand
+behind it and an **Apply** button (`POST /api/planner/apply`). Applying is held to the
+planner's own rules, demand, cooldown and capacity, so it can open nothing the automatic planner would not; only the
+pace is the operator's. Idle lures are still closed automatically.
+
+### Demo
+
+```bash
+bun run demo:reset     # with the stack stopped: forget the planner's lures, keep everything else
+# apps/api/.env: CITY_PLANNER=propose
+bun run dev            # open http://localhost:5173/city
+```
+
+1. The City planner panel shows suggestions built from past attacks, e.g. "Docker in the shell · 18 IPs".
+2. **Apply** one: the camera flies to its building, scaffolding and a crane go up, and a few seconds later the
+   honeypot serves it and the building opens as a lure.
+3. `bun run attack:lures` attacks whatever lures are open: attackers walk to the new buildings and the planner counts
+   what each lure caught.
 
 ## Exposed services
 
@@ -114,6 +169,7 @@ Rules and replay are covered by `bun test tests/chronicle.test.ts`.
 | Redis                | 6379 | `apps/honeypot/config/services/redis.yaml`          |
 | MCP (AI agents)      | 8000 | `apps/honeypot/config/services/mcp.yaml`            |
 | Prometheus metrics   | 2112 | `apps/honeypot/config/beelzebub.yaml`               |
+| Lures (on demand)    | see [City planner](#city-planner) | `apps/honeypot/config/lures/`          |
 
 The MCP service is a Streamable HTTP endpoint at `http://localhost:8000/mcp` exposing bait tools (`execute_command`, `read_file`,
 `get_cloud_credentials`, `query_database`, `user_account_manager`). Every tool call is logged with its arguments and answered

@@ -21,9 +21,11 @@ COPY packages packages
 COPY apps/api apps/api
 # /api/services reads the honeypot service definitions.
 COPY apps/honeypot/config/services apps/honeypot/config/services
+# The city planner copies lure configs from here into the annex volume.
+COPY apps/honeypot/config/lures apps/honeypot/config/lures
 COPY --from=build /app/apps/web/dist apps/web/dist
-# Owned by bun so the named intel volume (mounted here) starts out writable.
-RUN mkdir -p /app/data && chown bun:bun /app/data
+# Owned by bun so the named intel and annex volumes (mounted here) start out writable.
+RUN mkdir -p /app/data /app/annex && chown bun:bun /app/data /app/annex
 USER bun
 EXPOSE 4000
 CMD ["bun", "apps/api/src/index.ts"]

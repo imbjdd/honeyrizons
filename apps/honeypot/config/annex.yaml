@@ -1,0 +1,19 @@
+# Core config for the annex: the lures the city planner opens at runtime (see scripts/supervise.sh).
+# It runs as a second Beelzebub so lures can come and go without restarting the main services.
+core:
+  logging:
+    debug: false
+    debugReportCaller: false
+    logDisableTimestamp: false
+    logsPath: ../../logs/annex.log
+  tracings:
+    rabbit-mq:
+      enabled: false
+      uri: ""
+  prometheus:
+    path: "/metrics"
+    port: ":2113"
+  beelzebub-cloud:
+    enabled: false
+    uri: ""
+    auth-token: ""

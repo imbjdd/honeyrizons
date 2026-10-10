@@ -3,7 +3,10 @@ import { cn } from "@/lib/utils";
 import { SEVERITY_GLOW } from "./attackers";
 import type { BuildingId } from "./explore";
 import type { CityHandle } from "./model";
-import type { ServiceSite } from "./useCityActivity";
+import type { LureSite, ServiceSite } from "./useCityActivity";
+
+/** Matches the scaffolding in construction.ts. */
+const BUILDING_GLOW = "#ff9f1c";
 
 /** Short service names for the floating labels. */
 export function serviceName(site: ServiceSite) {
@@ -17,11 +20,14 @@ export function serviceName(site: ServiceSite) {
 export function CityServiceLabels({
   city,
   sites,
+  construction,
   selected,
   select,
 }: {
   city: RefObject<CityHandle | null>;
   sites: ServiceSite[];
+  /** Lures the planner is building: labelled on their scaffolding until they open. */
+  construction: LureSite[];
   selected: BuildingId | null;
   select: (building: BuildingId) => void;
 }) {
@@ -61,6 +67,8 @@ export function CityServiceLabels({
             }}
             className={cn("city-label", selected === site.building && "is-selected")}
             data-status={site.state.status}
+            data-lure={site.state.lure ? "" : undefined}
+            title={site.state.lure ? "Opened by the city planner" : undefined}
             style={{ "--glow": threat ? SEVERITY_GLOW[threat] : "rgba(255,255,255,0.35)" } as CSSProperties}
             onClick={() => select(site.building)}
             aria-pressed={selected === site.building}
@@ -71,6 +79,26 @@ export function CityServiceLabels({
           </button>
         );
       })}
+      {construction.map((lure) => (
+        <button
+          key={lure.building}
+          type="button"
+          ref={(el) => {
+            if (el) refs.current.set(lure.building, el);
+            else refs.current.delete(lure.building);
+          }}
+          className={cn("city-label", selected === lure.building && "is-selected")}
+          data-status="building"
+          style={{ "--glow": BUILDING_GLOW } as CSSProperties}
+          title={lure.state.reason}
+          onClick={() => select(lure.building)}
+          aria-pressed={selected === lure.building}
+        >
+          <i aria-hidden="true" />
+          <span>{lure.blueprint.name}</span>
+          <em>building</em>
+        </button>
+      ))}
     </div>
   );
 }

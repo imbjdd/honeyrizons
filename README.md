@@ -1,52 +1,59 @@
 # Honeyrizons 🍯
 
-Honeypot basé sur [Beelzebub](https://github.com/beelzebub-labs/beelzebub) + un dashboard web temps réel.
+A honeypot built on [Beelzebub](https://github.com/beelzebub-labs/beelzebub) with a real-time web dashboard.
 
-Monorepo [Turborepo](https://turborepo.com) + workspaces Bun.
+[Turborepo](https://turborepo.com) monorepo with Bun workspaces.
 
 ```
 apps/
   honeypot/        @honeyrizons/honeypot — Beelzebub (Go)
-    beelzebub/       sources upstream (vendored, non modifiées)
-    config/          config core + services exposés
-    scripts/         attack.sh (faux trafic)
-  api/             @honeyrizons/api — Bun : tail du log → REST + SSE (:4000)
+    beelzebub/       upstream sources (vendored, unmodified)
+    config/          core config + exposed services
+    scripts/         attack.sh (local traffic), seed-demo.ts (demo data)
+  api/             @honeyrizons/api — Bun: tails the log → REST + SSE (:4000)
   web/             @honeyrizons/web — React + Vite (:5173)
 packages/
-  shared/          @honeyrizons/shared — types d'event + helpers partagés
-  tsconfig/        @honeyrizons/tsconfig — tsconfig de base
-logs/              beelzebub.log (généré)
+  shared/          @honeyrizons/shared — event types + shared helpers
+  tsconfig/        @honeyrizons/tsconfig — base tsconfig
+logs/              beelzebub.log (generated)
 ```
 
-Flux : `honeypot` écrit les events JSON dans `logs/beelzebub.log` → `api` le lit en continu et pousse en SSE → `web` affiche.
+Flow: `honeypot` writes JSON events to `logs/beelzebub.log` → `api` tails it and pushes over SSE → `web` renders them.
 
-## Prérequis
+## Requirements
 
 Go ≥ 1.26, Bun.
 
-## Commandes
+## Commands
 
 ```bash
 bun install
-bun run dev        # build Go + honeypot + API + UI → http://localhost:5173
-bun run attack     # dans un autre terminal, simule des attaques
-bun run build      # binaire Go + UI buildée
-bun run start      # mode prod : UI servie par l'API sur http://localhost:4000
+bun run dev        # Go build + honeypot + API + UI → http://localhost:5173
+bun run attack     # in another terminal, simulates attacks (from ::1)
+bun run seed       # appends ~60 demo attackers with IPs from around the world (for the map)
+bun run build      # Go binary + built UI
+bun run start      # production mode: UI served by the API on http://localhost:4000
 bun run typecheck
 ```
 
-Pour cibler un seul package : `bunx turbo run dev --filter=@honeyrizons/web`.
+The map geolocates IPs offline (bundled GeoLite database via `geoip-lite`), so no IP is sent to a third-party service.
+Local addresses (`::1`, private ranges) have no location. Events from `bun run seed` are tagged `Metadata.demo = "true"`.
+Set the honeypot's position on the map with `HONEYPOT_LOCATION="lat,lon"` for the API (defaults to Paris).
 
-## Services exposés
+To target a single package: `bunx turbo run dev --filter=@honeyrizons/web`.
 
-| Service              | Port | Config                              |
-| -------------------- | ---- | ----------------------------------- |
-| SSH (shell fake)     | 2222 | `apps/honeypot/config/services/ssh.yaml`        |
-| Telnet               | 2323 | `apps/honeypot/config/services/telnet.yaml`     |
+## Exposed services
+
+| Service              | Port | Config                                              |
+| -------------------- | ---- | --------------------------------------------------- |
+| SSH (fake shell)     | 2222 | `apps/honeypot/config/services/ssh.yaml`            |
+| Telnet               | 2323 | `apps/honeypot/config/services/telnet.yaml`         |
 | HTTP (WordPress)     | 8080 | `apps/honeypot/config/services/http-wordpress.yaml` |
-| MySQL                | 3306 | `apps/honeypot/config/services/mysql.yaml`      |
-| Redis                | 6379 | `apps/honeypot/config/services/redis.yaml`      |
-| Prometheus metrics   | 2112 | `apps/honeypot/config/beelzebub.yaml`           |
+| MySQL                | 3306 | `apps/honeypot/config/services/mysql.yaml`          |
+| Redis                | 6379 | `apps/honeypot/config/services/redis.yaml`          |
+| Prometheus metrics   | 2112 | `apps/honeypot/config/beelzebub.yaml`               |
 
-Pour ajouter un service, copier un exemple depuis `apps/honeypot/beelzebub/configurations/services/` dans `apps/honeypot/config/services/`.
-Les events sont écrits en JSON dans `logs/beelzebub.log`, que le dashboard lit en continu.
+To add a service, copy an example from `apps/honeypot/beelzebub/configurations/services/` into `apps/honeypot/config/services/`.
+Events are written as JSON to `logs/beelzebub.log`, which the dashboard tails continuously.
+
+Dashboard UI adapted from the [ObsidianUI Analytics Dashboard](https://www.obsidianui.dev/docs/analytics-dashboard) (MIT).

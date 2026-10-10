@@ -2,13 +2,17 @@
   "name": "honeyrizons",
   "private": true,
   "packageManager": "bun@1.3.14",
-  "workspaces": ["apps/*", "packages/*"],
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
   "scripts": {
     "dev": "turbo run dev",
     "build": "turbo run build",
     "start": "turbo run start",
     "typecheck": "turbo run typecheck",
-    "attack": "turbo run attack --filter=@honeyrizons/honeypot"
+    "attack": "turbo run attack --filter=@honeyrizons/honeypot",
+    "seed": "turbo run seed --filter=@honeyrizons/honeypot"
   },
   "devDependencies": {
     "turbo": "^2.11.7"

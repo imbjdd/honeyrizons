@@ -6,16 +6,18 @@ export type AnalyticsDashboardPage = "overview" | "services" | "sessions" | "set
 export type AnalyticsDashboardAccent = "blue" | "violet" | "teal" | "amber";
 
 export const ACCENTS: Record<AnalyticsDashboardAccent, { label: string; ui: string }> = {
-  blue: { label: "Bleu", ui: "#4c9bff" },
+  blue: { label: "Blue", ui: "#4c9bff" },
   violet: { label: "Violet", ui: "#9d8df5" },
-  teal: { label: "Turquoise", ui: "#2fd0b5" },
-  amber: { label: "Ambre", ui: "#f2b54a" },
+  teal: { label: "Teal", ui: "#2fd0b5" },
+  amber: { label: "Amber", ui: "#f2b54a" },
 };
 
 export type AnalyticsDashboardStatus = {
   connected: boolean;
   logPath?: string;
   totalEvents: number;
+  /** Where the honeypot sits on the map. */
+  home: { lat: number; lon: number };
 };
 
 type DashboardState = {

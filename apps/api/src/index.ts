@@ -1,17 +1,32 @@
 // Tails the beelzebub JSON log and exposes events over HTTP + Server-Sent Events.
 import { existsSync, statSync, openSync, readSync, closeSync, readdirSync, readFileSync } from "node:fs";
 import { join, resolve } from "node:path";
-import type { HoneypotEvent, HoneypotService } from "@honeyrizons/shared";
+import geoip from "geoip-lite";
+import { sourceIp, type GeoLocation, type HoneypotEvent, type HoneypotService } from "@honeyrizons/shared";
 
 const LOG_PATH = resolve(process.env.LOG_PATH ?? join(import.meta.dir, "../../../logs/beelzebub.log"));
 const PORT = Number(process.env.PORT ?? 4000);
 const MAX_EVENTS = Number(process.env.MAX_EVENTS ?? 10000);
+// Where the honeypot itself sits on the map, as "lat,lon". Defaults to Paris.
+const [HOME_LAT, HOME_LON] = (process.env.HONEYPOT_LOCATION ?? "48.8566,2.3522").split(",").map(Number);
 const SERVICES_DIR = resolve(process.env.SERVICES_DIR ?? join(import.meta.dir, "../../honeypot/config/services"));
 const DIST = resolve(process.env.WEB_DIST ?? join(import.meta.dir, "../../web/dist"));
 
 const events: HoneypotEvent[] = [];
 const clients = new Set<ReadableStreamDefaultController<Uint8Array>>();
 const encoder = new TextEncoder();
+
+const geoCache = new Map<string, GeoLocation | undefined>();
+
+// Offline GeoLite lookup, so attacker IPs are never sent to a third-party service.
+function locate(ip: string): GeoLocation | undefined {
+  if (!ip) return undefined;
+  if (geoCache.has(ip)) return geoCache.get(ip);
+  const hit = geoip.lookup(ip);
+  const geo = hit ? { country: hit.country, city: hit.city, lat: hit.ll[0], lon: hit.ll[1] } : undefined;
+  geoCache.set(ip, geo);
+  return geo;
+}
 
 let offset = 0;
 let partial = "";
@@ -25,6 +40,8 @@ function ingest(line: string) {
     return;
   }
   if (entry.msg !== "New Event" || !entry.event) return;
+  const geo = locate(sourceIp(entry.event));
+  if (geo) entry.event.Geo = geo;
   events.push(entry.event);
   if (events.length > MAX_EVENTS) events.splice(0, events.length - MAX_EVENTS);
   const payload = encoder.encode(`data: ${JSON.stringify(entry.event)}\n\n`);
@@ -121,7 +138,13 @@ Bun.serve({
     }
 
     if (url.pathname === "/api/health") {
-      return Response.json({ ok: true, logPath: LOG_PATH, logExists: existsSync(LOG_PATH), events: events.length });
+      return Response.json({
+        ok: true,
+        logPath: LOG_PATH,
+        logExists: existsSync(LOG_PATH),
+        events: events.length,
+        location: { lat: HOME_LAT, lon: HOME_LON },
+      });
     }
 
     // Serve the built frontend in production.

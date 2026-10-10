@@ -7,6 +7,10 @@ export default defineConfig({
   resolve: {
     alias: { "@": fileURLToPath(new URL("./src", import.meta.url)) },
   },
+  build: {
+    // Keep flag SVGs as separate files so only the flags on screen are downloaded.
+    assetsInlineLimit: (file) => (file.includes("circle-flags") ? false : undefined),
+  },
   server: {
     port: 5173,
     proxy: { "/api": "http://localhost:4000" },

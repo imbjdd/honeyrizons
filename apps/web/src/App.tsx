@@ -9,6 +9,7 @@ function useHoneypot() {
   const [events, setEvents] = useState<HoneypotEvent[]>([]);
   const [services, setServices] = useState<HoneypotService[]>([]);
   const [logPath, setLogPath] = useState<string>();
+  const [home, setHome] = useState({ lat: 48.8566, lon: 2.3522 });
   const [connected, setConnected] = useState(false);
 
   useEffect(() => {
@@ -21,7 +22,11 @@ function useHoneypot() {
       .catch(() => {});
     fetch("/api/health")
       .then((r) => r.json())
-      .then((h: { logPath: string }) => !cancelled && setLogPath(h.logPath))
+      .then((h: { logPath: string; location?: { lat: number; lon: number } }) => {
+        if (cancelled) return;
+        setLogPath(h.logPath);
+        if (h.location) setHome(h.location);
+      })
       .catch(() => {});
 
     fetch(`/api/events?limit=${MAX_EVENTS}`)
@@ -49,7 +54,7 @@ function useHoneypot() {
     };
   }, []);
 
-  return { events, services, logPath, connected };
+  return { events, services, logPath, home, connected };
 }
 
 function useNow(intervalMs: number) {
@@ -62,7 +67,7 @@ function useNow(intervalMs: number) {
 }
 
 export default function App() {
-  const { events, services, logPath, connected } = useHoneypot();
+  const { events, services, logPath, home, connected } = useHoneypot();
   const tick = useNow(30_000);
   // Recompute against the latest event too, so new activity shows up immediately.
   const now = Math.max(tick, events.length ? Date.parse(events[events.length - 1].DateTime) : 0);
@@ -73,7 +78,7 @@ export default function App() {
       <AnalyticsDashboard
         data={data}
         now={now}
-        status={{ connected, logPath, totalEvents: events.length }}
+        status={{ connected, logPath, home, totalEvents: events.length }}
         brand={{ name: "Honeyrizons", logo: <span style={{ fontSize: 18, lineHeight: 1 }}>🍯</span> }}
         defaultAccent="amber"
       />

@@ -22,6 +22,16 @@ export type HoneypotEvent = {
   SourcePort: string;
   Handler: string;
   Metadata?: Record<string, string>;
+  /** Added by the API from the source IP; absent for private or unknown addresses. */
+  Geo?: GeoLocation;
+};
+
+export type GeoLocation = {
+  /** ISO 3166-1 alpha-2 country code. */
+  country: string;
+  city: string;
+  lat: number;
+  lon: number;
 };
 
 export function sourceIp(e: HoneypotEvent): string {

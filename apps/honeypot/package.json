@@ -6,6 +6,7 @@
     "dev": "mkdir -p ../../logs && ./bin/beelzebub run -c config/beelzebub.yaml -s config/services/",
     "start": "mkdir -p ../../logs && ./bin/beelzebub run -c config/beelzebub.yaml -s config/services/",
     "validate": "./bin/beelzebub validate -c config/beelzebub.yaml -s config/services/",
-    "attack": "./scripts/attack.sh"
+    "attack": "./scripts/attack.sh",
+    "seed": "bun scripts/seed-demo.ts"
   }
 }

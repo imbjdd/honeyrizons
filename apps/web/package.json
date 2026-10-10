@@ -9,17 +9,26 @@
   },
   "dependencies": {
     "@honeyrizons/shared": "workspace:*",
+    "circle-flags": "^2.8.3",
     "clsx": "^2.1.1",
     "motion": "^14.1.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
-    "tailwind-merge": "^3.7.0"
+    "react-globe.gl": "^2.38.0",
+    "tailwind-merge": "^3.7.0",
+    "three": "^0.186.1",
+    "topojson-client": "^3.1.0",
+    "world-atlas": "^2.0.2"
   },
   "devDependencies": {
     "@honeyrizons/tsconfig": "workspace:*",
+    "@types/geojson": "^7946.0.16",
     "@types/node": "^26.6.5",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
+    "@types/three": "^0.186.0",
+    "@types/topojson-client": "^3.1.5",
+    "@types/topojson-specification": "^1.0.5",
     "@vitejs/plugin-react": "^5.0.0",
     "typescript": "^5.9.0",
     "vite": "^7.0.0"

@@ -31,11 +31,14 @@ services:
     environment:
       # "lat,lon" of the honeypot on the attack map.
       HONEYPOT_LOCATION: ${HONEYPOT_LOCATION:-48.8566,2.3522}
+      INTEL_PATH: /app/data/intel.json
     # Localhost by default; on AWS DASHBOARD_BIND=0.0.0.0 and the security group only lets CloudFront in.
     ports:
       - "${DASHBOARD_BIND:-127.0.0.1}:4000:4000"
     volumes:
       - logs:/app/logs:ro
+      - intel:/app/data
 
 volumes:
   logs:
+  intel:

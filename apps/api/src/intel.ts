@@ -49,7 +49,14 @@ export function startIntel({ events, publish, storePath }: Options) {
   let briefInFlight = false;
   let analysesSinceBrief = 0;
 
-  const save = () => writeFileSync(storePath, JSON.stringify(store));
+  // A failed write only loses persistence across restarts; it must not take the API down.
+  const save = () => {
+    try {
+      writeFileSync(storePath, JSON.stringify(store));
+    } catch (err) {
+      console.error(`[intel] could not save ${storePath}:`, err);
+    }
+  };
   const budgetUsed = () => {
     const hourAgo = Date.now() - 3_600_000;
     while (calls.length && calls[0] < hourAgo) calls.shift();

@@ -22,6 +22,8 @@ COPY apps/api apps/api
 # /api/services reads the honeypot service definitions.
 COPY apps/honeypot/config/services apps/honeypot/config/services
 COPY --from=build /app/apps/web/dist apps/web/dist
+# Owned by bun so the named intel volume (mounted here) starts out writable.
+RUN mkdir -p /app/data && chown bun:bun /app/data
 USER bun
 EXPOSE 4000
 CMD ["bun", "apps/api/src/index.ts"]

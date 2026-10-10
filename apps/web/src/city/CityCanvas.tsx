@@ -51,8 +51,9 @@ export default function CityCanvas({
     <canvas
       ref={canvas}
       className="city-canvas"
-      aria-label="Interactive city with clickable people and shops. Drag to pan and scroll to zoom. Places lists shops and residents for keyboard navigation."
-      role="img"
+      aria-label="Explore Honeyrizons. Outside, drag to pan and click shops or residents. Inside, use WASD or ZQSD to walk, arrow keys to look, drag to look around, and E to interact. Escape leaves the room."
+      tabIndex={0}
+      role="application"
     />
   );
 }

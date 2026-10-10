@@ -37,18 +37,24 @@ The second inspection covered a resident's profile, traits and conversation, a c
 
 The first Honeyrizons skyline repeated too many rectangular blocks. This pass uses painted plaster, teal glazing, brass trim, coral roofs and shop-specific signs. The tower gets an Art Deco crown, the hotel a curved corner sign, the record shop a rooftop disc and the café a yellow tiled roof. The street stays the main view.
 
-Added colors are petrol `#386c78`, marigold `#efb83f`, dusty rose `#cc7d92`, porcelain `#e8e7de`, cornflower `#819db9` and midnight `#182c43`. Interface typography stays small; shop lettering and pixel people carry the personality.
+The paint palette now uses marigold #f7c64f, turquoise #32aaa8, sky blue #67bddd, coral #f49375, rose #ee709b and lilac #ac81dc. Gray roofs and pale stone keep the streets readable. Neutral tone mapping preserves the painted colors. The room palette uses turquoise walls, yellow stairs and pendant lamps, cream tiles and honey-colored wood.
 
-Interiors use open-front dollhouse rooms. Furniture, residents and the floor plan can be seen together, including on touchscreens. Each shop has its own layout and objects. Floor buttons and a clickable lift connect rooms. A visible exit restores the street camera. Resident portraits, speech bubbles and short conversations carry through both scenes.
+## First-person interiors
 
-```
- city / shop name                         environment
- floor tabs + return to street
+Entering a storefront switches from the outdoor orthographic camera to a perspective camera at eye level. Each building contains all of its floors in one 3D scene. Open stairwells and alternating stair flights connect the levels, so walking upstairs has no scene cut. Honey Tower has reception, a control room and a roof terrace. The other multistory shops have upstairs studios, listening rooms or gardens.
 
-         furnished cutaway room          person / object
-       pixel residents + lift            conversation
+The player walks with WASD or ZQSD, looks with a drag or the arrow keys, and interacts with E or a click. Free look can lock the mouse. A four-button pad handles walking on touchscreens. The camera has no head bob. Furniture footprints, walls and reachable stair surfaces constrain movement. The front doorway leads back to the street. A floor menu offers a keyboard shortcut between levels.
 
-         people in this room             camera
-```
+Pixel residents move through clear aisles and face the camera. Talking to a resident opens a profile and a choice-based conversation. The resident stops walking during the conversation, and player movement stops while a panel is open. Coffee counters, record players, reading tables and potting benches have local actions or information.
 
-The rooms are an intentional change from the reference's first-person hall. They keep the 2.5D character style and entrance flow while making characters and floors discoverable without mouse-look controls. A building directory and resident list provide keyboard access to canvas interactions. All conversations and shop actions are local demo content.
+The room HUD is small. A location card and resident shortcuts sit at the left edge, a crosshair marks the center, and a nearby prompt appears near the bottom. The street statistics and camera toolbar disappear indoors. Photo mode hides the room controls too.
+
+    brand / room / floor                          environment
+
+              furnished first-person room
+       moving pixel residents, objects and stairs
+                        crosshair
+
+    walk / look controls            nearby interaction
+
+The city and conversations use local demo data. The existing analytics dashboard, including its attack globe, remains at /dashboard. The city does not make honeypot API requests.

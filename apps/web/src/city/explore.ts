@@ -79,7 +79,7 @@ export const buildings: Building[] = [
     id: "hotel",
     name: "Web Hotel",
     japanese: "ウェブホテル",
-    color: "#73b9a0",
+    color: "#35b8a2",
     protocol: "HTTP",
     position: [23, 0, -18],
     floors: [
@@ -99,7 +99,7 @@ export const buildings: Building[] = [
     id: "records",
     name: "Side A Records",
     japanese: "レコード",
-    color: "#cc7d92",
+    color: "#ee709b",
     protocol: "HTTP",
     position: [49, 0, -19],
     floors: [
@@ -119,7 +119,7 @@ export const buildings: Building[] = [
     id: "archive",
     name: "The Archive",
     japanese: "記録館",
-    color: "#a698cb",
+    color: "#ac81dc",
     protocol: "MYSQL",
     position: [49, 0, 20],
     floors: [
@@ -159,7 +159,7 @@ export const buildings: Building[] = [
     id: "gardens",
     name: "Cache House",
     japanese: "庭園",
-    color: "#7caec7",
+    color: "#49b6dc",
     protocol: "REDIS",
     position: [23, 0, 22],
     floors: [

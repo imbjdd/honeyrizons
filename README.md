@@ -6,7 +6,7 @@ A honeypot built on [Beelzebub](https://github.com/beelzebub-labs/beelzebub) wit
 
 ## Frontend ville 3D
 
-La page d'accueil est une ville voxel Three.js inspirée de [ZStreet](https://zstreet.cash/), avec cinq quartiers, circulation animée, mode jour/nuit et export photo. Elle utilise des données de démonstration locales.
+La page d'accueil est une ville voxel Three.js inspirée de [ZStreet](https://zstreet.cash/), avec cinq quartiers, des personnages 2D cliquables, neuf boutiques et 17 étages à explorer. Les intérieurs se visitent à la première personne, avec déplacement, escaliers et conversations. Les couleurs, la circulation, le mode jour/nuit et l'export photo utilisent des données de démonstration locales.
 
 ```bash
 bun install

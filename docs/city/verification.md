@@ -1,33 +1,38 @@
 # Frontend verification
 
-Checked in the T3 Code collaborative browser on October 10, 2026.
+Checked in the T3 Code collaborative browser on October 10, 2026, using the production build on port 5174. The reference was inspected in the same browser, including a resident, its conversation and transaction views, the MEMPOOL shop, a shopkeeper, an indoor display, place controls and the exit.
 
-## Build
+## Build and regression checks
 
-- `bun run build:web`: TypeScript and Vite production build pass.
-- `bun run typecheck`: web, API and shared package typechecks pass.
-- `git diff --check`: pass.
-- `bun install --frozen-lockfile`: pass.
-- The concurrent ObsidianUI dashboard update from `main` is preserved at `/dashboard`, including its components, dependencies, aliases and styles. The dashboard entry and stylesheet match that upstream revision byte for byte. Its fonts load locally only on that route.
+- Frontend production build and repository typechecks pass.
+- The five walking tests pass with 19 assertions. They cover furniture and wall collision, sliding, three-floor stairs in both directions, stairwell boundaries, frame-rate-independent movement, diagonal speed, pitch limits and the ground-floor exit.
+- Frozen dependency installation and whitespace checks pass.
+- The latest upstream dashboard and attack globe are preserved at /dashboard. The dashboard source matches origin/main at 31b61d8. Its stylesheet and fonts load only on that route.
+- The city route makes no API or SSE requests. The globe module is a separate lazy chunk. Vite still warns about large chunks.
 
-## Browser checks
+## City checks
 
-- City renders with local fonts, authored geometry, road markings, shops, foliage, pedestrians, moving cars, buses and tram.
-- Day/night changes both the scene and interface. Night adds lit windows, streetlamp glows and light cones.
-- Theme persists after reload. Local-clock mode is available.
-- Camera zoom, rotation, home, automatic tour and district navigation work.
-- Clicking a landmark opens its district. Choosing a place moves the camera; the district action closes its panel.
-- Activity updates from local fixtures. Search returns matching entries; an unmatched query shows an empty state; clearing filters restores the feed.
-- Selecting SSH leaves only SSH entries. Expanded events show the source address, location, severity and simulated-event label. The district action navigates to the event's neighborhood.
-- Escape closes panels. Panels receive focus on opening and restore the trigger's focus on closing. Icon controls have accessible labels; the skip link and visible focus styles are present.
-- Pause keeps both the connection count and canvas pixel output identical over a five-second interval. Resume restarts local activity and motion.
-- Photo mode hides the HUD. Noir export was inspected as a valid 1920 × 1200 PNG; the sampled output pixel had identical R, G and B values, confirming the filter applies to the saved image.
-- Ambient sound requires a user click and can be muted.
-- No `/api` requests or SSE connections occur on the city route.
-- Console entries in the final production smoke check contain no application errors.
+The outdoor city renders locally authored buildings, road markings, signs, trees, pixel residents, traffic and a tram. Resident selection, follow, shop entrances, day/night, camera controls, district navigation, pause, activity filtering, sound and filtered photo export were checked across the development passes.
 
-Responsive checks cover 320 × 568, 390 × 844, 844 × 390, 768 × 1024, 1024 × 768, 1280 × 800 and 1440 × 900. The small landscape and portrait layouts use a compact camera toolbar. No horizontal overflow or overlap between the brand/environment controls, district/statistics controls, and toolbar/activity button remains.
+Shop entrances now enter the building directly. Apartment picks open an information card. The shop directory and Places menu provide keyboard access. Street regulars and named residents use the same pixel artwork as their profile portraits.
 
-Reduced-motion behavior and resource disposal were inspected in code. Reduced motion stops simulated events and automatic motion; manual camera actions remain available. Context loss has a reload action. These two browser preferences/failure cases were not emulated in this browser session.
+## First-person rooms
 
-The browser's animation callback cadence was approximately 120 Hz by day and 116 Hz at night at 1280 × 800 in this environment. This is a local observation, not a cross-device performance guarantee.
+- All nine buildings and 17 floors render with a perspective camera. Every floor produced a different canvas image.
+- All 61 room resident entries opened the expected profile.
+- Actual held keyboard input walked across the café and climbed and descended its stairs. The floor label updated on the landing. The recorded walkthrough uses held walking inputs too.
+- All 16 ascending and descending stair routes passed against the actual building collision plans, including Honey Tower's third floor. This route sweep drove the navigation controller directly in the browser.
+- E opened Mika's profile from the crosshair. Conversation choices returned the authored replies. Movement remained blocked while the inspector was open.
+- Residents moved in their aisles. The selected resident held position during a conversation. Pause stopped their movement and sprite animation.
+- The touch movement callbacks moved the player and released on pointer-up. Blur released held walking input. Pointer cancellation also clears input.
+- Walking through the ground-floor doorway exited the room. Return to the street and Escape restored the outdoor camera. Floor-menu shortcuts were checked throughout the room sweep.
+- Coffee, lift and shop actions were checked during the earlier exploration pass. The final version replaces the lift with physical stairs. The turntable, coffee and watering actions remain local demos.
+- Final browser checks recorded no application errors.
+
+## Responsive and motion checks
+
+The city layout was checked at phone, tablet and desktop sizes during the first pass. The first-person phone layout was checked at 390 by 844, including the movement pad, room header and resident shortcuts, with no horizontal overflow. The floor menu hides the roster while expanded to keep its destinations clear.
+
+Reduced-motion behavior and context-loss handling were inspected in code. Reduced motion disables automatic movement and events while preserving manual walking and looking. Mouse-look pitch is bounded, movement has no head bob, and open panels release held input. The context-loss screen offers Reload.
+
+The collaborative browser briefly throttled background frames and failed some captures. Focusing the preview restored a 120 Hz animation callback cadence. This is a local observation, not a cross-device performance guarantee. Screenshots and the short walkthrough were saved after the preview recovered.

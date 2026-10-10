@@ -7,6 +7,11 @@ import { OutputPass } from "three/addons/postprocessing/OutputPass.js";
 import { buildWorld, type CityWorld } from "./world";
 import { buildInterior, type Interior } from "./interiors";
 import {
+  RoomController,
+  type WalkAction,
+  FLOOR_HEIGHT,
+} from "./RoomController";
+import {
   getBuilding,
   residentById,
   type BuildingId,
@@ -24,6 +29,15 @@ export class CityScene implements CityHandle {
   private outdoor = new THREE.Group();
   private interior: Interior | null = null;
   private room: RoomLocation | null = null;
+  private walker: RoomController | null = null;
+  private renderPass: RenderPass;
+  private nearby: THREE.Object3D | null = null;
+  private nearbyLabel = "";
+  private dragPointer: number | null = null;
+  private dragLast = { x: 0, y: 0 };
+  private get activeCamera(): THREE.Camera {
+    return this.walker?.camera ?? this.camera;
+  }
   private streetCamera: {
     position: THREE.Vector3;
     target: THREE.Vector3;
@@ -80,7 +94,7 @@ export class CityScene implements CityHandle {
     this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 1.5));
     this.renderer.shadowMap.enabled = true;
     this.renderer.shadowMap.type = THREE.PCFShadowMap;
-    this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
+    this.renderer.toneMapping = THREE.NeutralToneMapping;
     this.renderer.toneMappingExposure = 1.15;
     this.camera.position.set(78, 80, 104);
     this.camera.lookAt(-3, 9, -2);
@@ -127,7 +141,8 @@ export class CityScene implements CityHandle {
     this.scene.add(this.selection);
 
     this.composer = new EffectComposer(this.renderer);
-    this.composer.addPass(new RenderPass(this.scene, this.camera));
+    this.renderPass = new RenderPass(this.scene, this.camera);
+    this.composer.addPass(this.renderPass);
     this.bloom = new UnrealBloomPass(
       new THREE.Vector2(1280, 800),
       0.28,
@@ -142,6 +157,7 @@ export class CityScene implements CityHandle {
     this.update(options);
     canvas.addEventListener("pointerdown", this.onPointerDown);
     canvas.addEventListener("pointerup", this.onPointerUp);
+    canvas.addEventListener("pointercancel", this.onPointerCancel);
     canvas.addEventListener("pointermove", this.onPointerMove);
     canvas.addEventListener("pointerleave", this.onPointerLeave);
     canvas.addEventListener("webglcontextlost", this.onContextLost);
@@ -162,10 +178,7 @@ export class CityScene implements CityHandle {
     this.sun.color.set(night ? "#b3c5ea" : "#fff1d5");
     this.sun.intensity = night ? 0.55 : 2.2;
     this.renderer.toneMappingExposure = night ? 1.2 : 1.08;
-    [
-      this.world.geometry,
-      ...(this.interior ? [this.interior.geometry] : []),
-    ].forEach((geo) =>
+    [this.world.geometry, ...(this.interior?.geometries ?? [])].forEach((geo) =>
       geo.windows.forEach((m) => {
         m.emissiveIntensity = night ? 0.8 : 0.09;
       }),
@@ -183,8 +196,15 @@ export class CityScene implements CityHandle {
     this.world.actors.forEach((actor) => {
       actor.mesh.visible = options.view !== "traffic" || !actor.pedestrian;
     });
+    if (this.walker) {
+      this.walker.enabled = !options.inputBlocked && !options.paused;
+      if (!this.walker.enabled && document.pointerLockElement === this.canvas)
+        void document.exitPointerLock();
+    }
     if (this.interior) {
-      this.ambient.intensity = night ? 1.4 : 1.9;
+      this.ambient.color.set(night ? "#becdf6" : "#f3fbff");
+      this.ambient.groundColor.set(night ? "#99a3b5" : "#d8e1df");
+      this.ambient.intensity = night ? 1.6 : 2.2;
       this.sun.intensity = night ? 1.1 : 2.1;
     }
     this.world.bubbles.forEach(
@@ -195,6 +215,7 @@ export class CityScene implements CityHandle {
   }
 
   zoom(direction: number) {
+    if (this.walker) return;
     this.targetZoom = THREE.MathUtils.clamp(
       (this.targetZoom ?? this.camera.zoom) * (direction > 0 ? 1.22 : 0.82),
       this.controls.minZoom,
@@ -202,6 +223,11 @@ export class CityScene implements CityHandle {
     );
   }
   rotate(direction: number) {
+    if (this.walker) {
+      this.walker.navigation.yaw -= (direction * Math.PI) / 4;
+      this.dirty = true;
+      return;
+    }
     this.touring = false;
     const offset = this.camera.position.clone().sub(this.controls.target);
     this.angle = Math.atan2(offset.x, offset.z) + (direction * Math.PI) / 4;
@@ -283,11 +309,13 @@ export class CityScene implements CityHandle {
     this.scene.add(this.interior.root);
     this.outdoor.visible = false;
     this.recordPlaying = false;
-    this.controls.target.set(1.8, 2, 0);
-    this.camera.position.set(31.8, 33, 40);
-    this.camera.zoom = 1;
-    this.controls.minZoom = 0.65;
-    this.controls.maxZoom = 2.8;
+    this.controls.enabled = false;
+    this.walker?.dispose();
+    this.walker = new RoomController(this.interior, () => this.interact());
+    this.walker.spawn(safeFloor);
+    this.renderPass.camera = this.walker.camera;
+    this.canvas.style.cursor = "crosshair";
+    this.canvas.focus({ preventScroll: true });
     Object.assign(this.sun.shadow.camera, {
       left: -34,
       right: 34,
@@ -312,6 +340,15 @@ export class CityScene implements CityHandle {
       this.interior.dispose();
       this.interior = null;
     }
+    this.walker?.dispose();
+    this.walker = null;
+    this.controls.enabled = true;
+    this.renderPass.camera = this.camera;
+    this.nearby = null;
+    this.nearbyLabel = "";
+    this.options.onNearby(null);
+    if (document.pointerLockElement === this.canvas)
+      void document.exitPointerLock();
     this.room = null;
     this.outdoor.visible = true;
     this.target = null;
@@ -347,8 +384,37 @@ export class CityScene implements CityHandle {
     }
     this.selectedResident = id;
     const person = (this.interior?.people ?? this.world.people).find(
-      (p) => p.resident.id === id,
+      (p) =>
+        p.resident.id === id &&
+        (!this.room || p.sprite.userData.floor === this.room.floor),
     );
+    if (person && this.walker && this.room) {
+      const position = person.sprite.getWorldPosition(new THREE.Vector3());
+      if (this.walker.camera.position.distanceTo(position) > 5) {
+        const nav = this.walker.navigation;
+        // Find a clear point beside the resident rather than inside their counter.
+        for (const [dx, dz] of [
+          [0, 2.8],
+          [2.8, 0],
+          [0, -2.8],
+          [-2.8, 0],
+        ]) {
+          if (nav.surface(position.x + dx, position.z + dz) !== null) {
+            nav.position.set(
+              position.x + dx,
+              this.room.floor * FLOOR_HEIGHT,
+              position.z + dz,
+            );
+            break;
+          }
+        }
+      }
+      this.walker.navigation.yaw = Math.atan2(
+        this.walker.camera.position.x - position.x,
+        this.walker.camera.position.z - position.z,
+      );
+      this.walker.release();
+    }
     if (person && !this.interior) {
       this.target = person.sprite.position
         .clone()
@@ -373,7 +439,9 @@ export class CityScene implements CityHandle {
   shopAction(action: "coffee" | "record" | "water") {
     if (!this.interior) return;
     if (action === "record") this.recordPlaying = !this.recordPlaying;
-    const person = this.interior.people[0];
+    const person = this.interior.people.find(
+      (p) => p.sprite.userData.floor === this.room?.floor,
+    )!;
     this.world.art.release(this.interior.root);
     this.world.art.bubble(
       action === "coffee"
@@ -383,9 +451,9 @@ export class CityScene implements CityHandle {
           : this.recordPlaying
             ? "Good choice. Side A it is."
             : "I'll put the needle away.",
-      this.interior.root,
+      person.sprite.parent as THREE.Group,
       person.sprite.position.x,
-      3.85,
+      2.75,
       person.sprite.position.z,
     );
     this.dirty = true;
@@ -430,36 +498,25 @@ export class CityScene implements CityHandle {
     this.follow(null);
     this.options.onInteraction();
   };
-  private onPointerDown = (event: PointerEvent) => {
-    this.pointerDown = { x: event.clientX, y: event.clientY };
-  };
-  private onPointerUp = (event: PointerEvent) => {
-    if (
-      event.button !== 0 ||
-      Math.hypot(
-        event.clientX - this.pointerDown.x,
-        event.clientY - this.pointerDown.y,
-      ) > 5
-    )
-      return;
-    const hit = this.pick(event);
-    this.options.onHover(null);
-    if (!hit) {
-      this.selectedResident = null;
-      this.selection.visible = false;
-      this.options.onInspect(null);
-      this.dirty = true;
-      return;
-    }
+  move(action: WalkAction, pressed: boolean) {
+    this.walker?.action(action, pressed);
+  }
+  lockLook() {
+    if (this.walker?.enabled)
+      void this.canvas.requestPointerLock()?.catch(() => {});
+  }
+  interact() {
+    if (!this.walker?.enabled) return;
+    this.walker.camera.updateMatrixWorld();
+    this.scene.updateMatrixWorld(true);
+    const hit = this.pick();
+    if (hit) this.activate(hit);
+  }
+  private activate(hit: THREE.Object3D) {
     const data = hit.userData;
     if (data.kind === "resident") this.inspect(data.id);
     else if (data.kind === "building") this.enter(data.id);
     else if (data.kind === "exit") this.exit();
-    else if (data.kind === "lift" && this.room)
-      this.enter(
-        this.room.building,
-        (this.room.floor + 1) % getBuilding(this.room.building).floors.length,
-      );
     else if (data.kind === "prop") {
       this.selectedResident = null;
       this.selection.visible = false;
@@ -470,21 +527,78 @@ export class CityScene implements CityHandle {
         action: data.action,
       });
     }
+    this.walker?.release();
+  }
+  private onPointerDown = (event: PointerEvent) => {
+    this.pointerDown = { x: event.clientX, y: event.clientY };
+    if (this.walker?.enabled) {
+      this.canvas.focus({ preventScroll: true });
+      this.dragPointer = event.pointerId;
+      this.dragLast = { x: event.clientX, y: event.clientY };
+      this.canvas.setPointerCapture(event.pointerId);
+    }
   };
-  private pick(event: PointerEvent) {
-    const rect = this.canvas.getBoundingClientRect();
-    this.pointer.set(
-      ((event.clientX - rect.left) / rect.width) * 2 - 1,
-      -((event.clientY - rect.top) / rect.height) * 2 + 1,
-    );
-    this.raycaster.setFromCamera(this.pointer, this.camera);
-    const objects = this.interior?.picks ?? this.world.picks;
+  private onPointerUp = (event: PointerEvent) => {
+    this.dragPointer = null;
+    if (this.canvas.hasPointerCapture(event.pointerId))
+      this.canvas.releasePointerCapture(event.pointerId);
+    if (
+      event.button !== 0 ||
+      Math.hypot(
+        event.clientX - this.pointerDown.x,
+        event.clientY - this.pointerDown.y,
+      ) > 5
+    )
+      return;
+    if (this.walker && !this.walker.enabled) return;
+    const hit =
+      document.pointerLockElement === this.canvas
+        ? this.nearby
+        : this.pick(event);
+    this.options.onHover(null);
+    if (hit) this.activate(hit);
+    else if (!this.walker) this.inspect(null);
+  };
+  private label(hit: THREE.Object3D | null) {
+    const d = hit?.userData;
+    return d?.kind === "resident"
+      ? `Talk to ${residentById(d.id).name}`
+      : d?.kind === "building"
+        ? `Enter ${d.label}`
+        : d?.kind === "exit"
+          ? "Return to the street"
+          : d?.kind === "prop"
+            ? d.title
+            : null;
+  }
+  private pick(event?: PointerEvent) {
+    if (event) {
+      const rect = this.canvas.getBoundingClientRect();
+      this.pointer.set(
+        ((event.clientX - rect.left) / rect.width) * 2 - 1,
+        -((event.clientY - rect.top) / rect.height) * 2 + 1,
+      );
+    } else this.pointer.set(0, 0);
+    this.raycaster.setFromCamera(this.pointer, this.activeCamera);
+    const objects =
+      this.interior?.picks.filter(
+        (p) => p.userData.floor === this.room?.floor,
+      ) ?? this.world.picks;
     for (const hit of this.raycaster.intersectObjects(objects, false)) {
-      if (!hit.object.visible) continue;
-      // Ignore empty pixels around a resident's silhouette.
+      if (!hit.object.visible || (this.walker && hit.distance > 5.5)) continue;
+      // Furniture and walls hide interactions behind them. Pick boxes surround their own objects.
+      if (
+        this.interior &&
+        this.raycaster
+          .intersectObjects(
+            this.interior.geometries.flatMap((g) => g.root.children),
+            false,
+          )
+          .some((block) => block.distance < hit.distance - 0.15)
+      )
+        continue;
       if (hit.object instanceof THREE.Sprite && hit.uv) {
-        const map = hit.object.material.map;
-        const canvas = map?.image as HTMLCanvasElement;
+        const canvas = hit.object.material.map?.image as HTMLCanvasElement;
         if (canvas?.getContext) {
           const alpha = canvas
             .getContext("2d")!
@@ -508,25 +622,31 @@ export class CityScene implements CityHandle {
     return null;
   }
   private onPointerMove = (event: PointerEvent) => {
+    if (this.walker) {
+      if (document.pointerLockElement === this.canvas)
+        this.walker.look(event.movementX, event.movementY);
+      else if (this.dragPointer === event.pointerId) {
+        this.walker.look(
+          event.clientX - this.dragLast.x,
+          event.clientY - this.dragLast.y,
+        );
+        this.dragLast = { x: event.clientX, y: event.clientY };
+      }
+      this.dirty = true;
+      return;
+    }
     if (event.buttons) return;
     const hit = this.pick(event);
     this.canvas.style.cursor = hit ? "pointer" : "grab";
-    const d = hit?.userData;
-    const label =
-      d?.kind === "resident"
-        ? `${residentById(d.id).name} / ${residentById(d.id).role}`
-        : d?.kind === "building"
-          ? `Enter ${d.label}`
-          : d?.kind === "lift"
-            ? "Take the lift"
-            : d?.kind === "exit"
-              ? "Return to the street"
-              : d?.kind === "prop"
-                ? d.title
-                : null;
+    const label = this.label(hit);
     this.options.onHover(
       label ? { label, x: event.clientX, y: event.clientY } : null,
     );
+  };
+  private onPointerCancel = () => {
+    this.dragPointer = null;
+    this.walker?.release();
+    this.options.onHover(null);
   };
   private onPointerLeave = () => {
     this.options.onHover(null);
@@ -548,6 +668,10 @@ export class CityScene implements CityHandle {
     const { width, height } =
       this.canvas.parentElement!.getBoundingClientRect();
     const aspect = width / Math.max(height, 1);
+    if (this.walker) {
+      this.walker.camera.aspect = aspect;
+      this.walker.camera.updateProjectionMatrix();
+    }
     // Wider framing on portrait screens keeps the landmark in view.
     const halfHeight = this.room
       ? Math.max(15, 21 / aspect)
@@ -572,6 +696,28 @@ export class CityScene implements CityHandle {
     this.lastTime = time;
     const moving = !this.options.paused && !this.options.reducedMotion;
     if (moving) this.elapsed += dt;
+    if (this.walker && this.interior && this.room) {
+      const walked = this.walker.update(dt);
+      this.interior.update(this.elapsed, moving, this.selectedResident);
+      if (this.walker.navigation.floor !== this.room.floor) {
+        this.room.floor = this.walker.navigation.floor;
+        this.options.onRoomChange({ ...this.room });
+        this.options.onInspect(null);
+        this.selectedResident = null;
+      }
+      if (this.walker.navigation.position.z > 10.25) this.exit();
+      else if (this.frame % 8 === 0 || walked) {
+        this.walker.camera.updateMatrixWorld();
+        this.scene.updateMatrixWorld(true);
+        this.nearby = this.pick();
+        const label = this.label(this.nearby) ?? "";
+        if (label !== this.nearbyLabel) {
+          this.nearbyLabel = label;
+          this.options.onNearby(label || null);
+        }
+      }
+      this.dirty ||= walked;
+    }
     const lerp = this.options.reducedMotion ? 1 : 1 - Math.exp(-dt * 5);
     if (this.following) {
       const person = this.world.people.find(
@@ -662,13 +808,15 @@ export class CityScene implements CityHandle {
         .add(new THREE.Vector3(0, 3.5, 0));
     });
     const selected = (this.interior?.people ?? this.world.people).find(
-      (p) => p.resident.id === this.selectedResident,
+      (p) =>
+        p.resident.id === this.selectedResident &&
+        (!this.room || p.sprite.userData.floor === this.room.floor),
     );
     this.selection.visible = !!selected;
     if (selected)
       this.selection.position.set(
         selected.sprite.position.x,
-        this.room ? 0.2 : 0.61,
+        this.room ? this.room.floor * FLOOR_HEIGHT + 0.15 : 0.61,
         selected.sprite.position.z,
       );
     if (this.interior?.record && this.recordPlaying && moving)
@@ -684,7 +832,7 @@ export class CityScene implements CityHandle {
       ).material.opacity = (1 - phase) * 0.65;
     });
     this.world.water.rotation.y = this.elapsed * 0.06;
-    const cameraChanged = this.controls.update();
+    const cameraChanged = !this.walker && this.controls.update();
     if (
       moving ||
       cameraChanged ||
@@ -701,7 +849,7 @@ export class CityScene implements CityHandle {
 
   private render() {
     if (this.options.theme === "night") this.composer.render();
-    else this.renderer.render(this.scene, this.camera);
+    else this.renderer.render(this.scene, this.activeCamera);
   }
 
   dispose() {
@@ -712,11 +860,13 @@ export class CityScene implements CityHandle {
     this.controls.dispose();
     this.canvas.removeEventListener("pointerdown", this.onPointerDown);
     this.canvas.removeEventListener("pointerup", this.onPointerUp);
+    this.canvas.removeEventListener("pointercancel", this.onPointerCancel);
     this.canvas.removeEventListener("pointermove", this.onPointerMove);
     this.canvas.removeEventListener("pointerleave", this.onPointerLeave);
     this.canvas.removeEventListener("webglcontextlost", this.onContextLost);
     document.removeEventListener("visibilitychange", this.onVisibility);
     this.interior?.dispose();
+    this.walker?.dispose();
     this.selection.geometry.dispose();
     this.selection.material.dispose();
     this.world.dispose();

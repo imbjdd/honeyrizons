@@ -1,3 +1,4 @@
+import type { WalkAction } from "./RoomController";
 import type {
   BuildingId,
   HoverTarget,
@@ -165,6 +166,8 @@ export interface CityOptions {
   paused: boolean;
   view: DataView;
   reducedMotion: boolean;
+  inputBlocked: boolean;
+  onNearby: (label: string | null) => void;
   onSelect: (protocol: Protocol) => void;
   onReady: () => void;
   onError: (message: string) => void;
@@ -177,6 +180,9 @@ export interface CityOptions {
 }
 
 export interface CityHandle {
+  move: (action: WalkAction, pressed: boolean) => void;
+  interact: () => void;
+  lockLook: () => void;
   zoom: (direction: number) => void;
   rotate: (direction: number) => void;
   home: () => void;

@@ -2373,3 +2373,258 @@
 .photo-mode .shop-directory {
   display: none;
 }
+
+/* First-person rooms use a small location card and controls along the edges. */
+.in-room .room-navigation {
+  top: 103px;
+  left: 20px;
+  width: 255px;
+  padding: 13px 15px;
+}
+.in-room .room-heading {
+  gap: 8px;
+}
+.in-room .room-heading h1 {
+  font-size: 19px;
+}
+.in-room .room-heading span,
+.in-room .room-navigation > p {
+  display: none;
+}
+.in-room .street-return {
+  padding-bottom: 10px;
+}
+.floor-menu {
+  margin-top: 12px;
+  font-size: 11px;
+}
+.floor-menu summary {
+  display: flex;
+  justify-content: space-between;
+  cursor: pointer;
+  gap: 12px;
+}
+.floor-menu summary span {
+  color: var(--muted);
+}
+.floor-menu .floor-tabs {
+  margin-top: 10px;
+}
+.in-room .room-people {
+  bottom: auto;
+  top: 235px;
+  left: 20px;
+  gap: 4px;
+  padding: 5px 7px;
+}
+.in-room .room-people > span {
+  display: none;
+}
+.in-room .room-people button {
+  padding: 2px 4px;
+  font-size: 10px;
+}
+.in-room .room-people img {
+  width: 16px;
+  height: 24px;
+}
+.in-room .city-stats,
+.in-room .camera-toolbar,
+.in-room .activity-toggle {
+  display: none;
+}
+.room-game-hud {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.room-crosshair {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: 17px;
+  height: 17px;
+  border: 1px solid #ffffffa8;
+  border-radius: 50%;
+  box-shadow: 0 0 2px #173e52;
+}
+.room-crosshair i {
+  width: 3px;
+  height: 3px;
+  background: white;
+  border-radius: 50%;
+  position: absolute;
+  left: 6px;
+  top: 6px;
+}
+.room-crosshair.has-target {
+  border-color: #ffce53;
+  transform: translate(-50%, -50%) scale(1.25);
+}
+.room-crosshair.has-target i {
+  background: #ffce53;
+}
+.walk-hint {
+  position: absolute;
+  bottom: 25px;
+  left: 20px;
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  font-size: 10px;
+  padding: 10px 13px;
+  border-radius: 3px;
+}
+.walk-hint span {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.walk-hint kbd,
+.nearby-action kbd {
+  font-family: inherit;
+  font-size: 10px;
+  border: 1px solid var(--line);
+  padding: 3px 5px;
+  border-radius: 3px;
+}
+.walk-hint button {
+  pointer-events: auto;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  border-left: 1px solid var(--line);
+  padding-left: 13px;
+}
+.nearby-action {
+  position: absolute;
+  bottom: 100px;
+  left: 50%;
+  transform: translateX(-50%);
+  pointer-events: auto;
+  padding: 10px 16px;
+  border-radius: 4px;
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  font-size: 12px;
+  white-space: nowrap;
+}
+.nearby-action kbd {
+  background: var(--honey);
+  color: #18394b;
+  border: none;
+  font-weight: 600;
+}
+.walk-pad,
+.touch-look-hint {
+  display: none;
+}
+.room-game-hud.is-blocked .room-crosshair {
+  opacity: 0;
+}
+.in-room .city-canvas {
+  cursor: crosshair;
+}
+.in-room .city-canvas:focus-visible {
+  outline: 2px solid #ffce53;
+  outline-offset: -3px;
+}
+.photo-mode .room-game-hud {
+  display: none;
+}
+@media (pointer: coarse), (max-width: 680px) {
+  .in-room .room-navigation {
+    left: 12px;
+    top: 80px;
+    width: 213px;
+    padding: 11px 13px;
+  }
+  .in-room .room-people {
+    top: 202px;
+    left: 12px;
+    right: auto;
+    bottom: auto;
+    flex-wrap: wrap;
+    max-width: 220px;
+  }
+  .in-room .room-people button {
+    font-size: 10px;
+    padding: 2px 4px;
+  }
+  .in-room .room-heading h1 {
+    font-size: 17px;
+  }
+  .walk-hint {
+    display: none;
+  }
+  .walk-pad {
+    display: grid;
+    position: absolute;
+    bottom: max(35px, env(safe-area-inset-bottom));
+    left: 18px;
+    grid-template-columns: repeat(3, 44px);
+    grid-template-rows: repeat(2, 44px);
+    gap: 4px;
+    pointer-events: auto;
+  }
+  .walk-pad button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #163e54b8;
+    color: #fff9e8;
+    border: 1px solid #ffffff50;
+    border-radius: 8px;
+    backdrop-filter: blur(8px);
+    touch-action: none;
+  }
+  .walk-pad button:active {
+    background: #f7c64f;
+    color: #143e51;
+  }
+  .walk-forward {
+    grid-column: 2;
+  }
+  .walk-left {
+    grid-column: 1;
+    grid-row: 2;
+  }
+  .walk-backward {
+    grid-column: 2;
+    grid-row: 2;
+  }
+  .walk-right {
+    grid-column: 3;
+    grid-row: 2;
+  }
+  .nearby-action {
+    bottom: 152px;
+    max-width: calc(100% - 30px);
+    white-space: normal;
+    width: max-content;
+  }
+  .touch-look-hint {
+    display: block;
+    position: absolute;
+    bottom: 30px;
+    right: 17px;
+    max-width: 130px;
+    text-align: right;
+    font-size: 10px;
+    line-height: 1.5;
+    color: white;
+    text-shadow: 0 1px 4px #153b51;
+  }
+}
+.in-room .network-strip,
+.in-room .activity-inbox {
+  display: none;
+}
+.in-room .room-navigation:has(.floor-menu[open]) {
+  z-index: 20;
+}
+.in-room:has(.floor-menu[open]) .room-people {
+  display: none;
+}

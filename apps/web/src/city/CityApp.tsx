@@ -240,6 +240,7 @@ export default function CityApp() {
   const [room, setRoom] = useState<RoomLocation | null>(null);
   const [inspection, setInspection] = useState<Inspection | null>(null);
   const [following, setFollowing] = useState<string | null>(null);
+  const [nearby, setNearby] = useState<string | null>(null);
   const [hover, setHover] = useState<HoverTarget | null>(null);
   const onInspect = useCallback((value: Inspection | null) => {
     setInspection(value);
@@ -288,6 +289,8 @@ export default function CityApp() {
       paused,
       view,
       reducedMotion,
+      inputBlocked: !!inspection || !!panel || dropdown,
+      onNearby: setNearby,
       onReady,
       onError,
       onSelect,
@@ -310,6 +313,9 @@ export default function CityApp() {
       onPhotoSaved,
       onInspect,
       onRoomChange,
+      inspection,
+      panel,
+      dropdown,
     ],
   );
   useEffect(() => () => window.clearTimeout(noticeTimer.current), []);
@@ -327,6 +333,7 @@ export default function CityApp() {
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
+        if (document.pointerLockElement) return;
         if (photo) {
           setPhoto(false);
           return;
@@ -358,7 +365,11 @@ export default function CityApp() {
         event.altKey
       )
         return;
-      if (event.code === "Space" && event.target === document.body) {
+      if (
+        event.code === "Space" &&
+        (event.target === document.body ||
+          event.target instanceof HTMLCanvasElement)
+      ) {
         event.preventDefault();
         setPaused((value) => !value);
       }
@@ -487,12 +498,18 @@ export default function CityApp() {
               <Camera size={17} />
             </ToolButton>
             <ToolButton
-              label="Take a city tour"
-              onClick={startTour}
-              active={touring}
-              disabled={reducedMotion}
+              label={
+                room
+                  ? paused
+                    ? "Resume room"
+                    : "Pause room"
+                  : "Take a city tour"
+              }
+              onClick={room ? () => setPaused((value) => !value) : startTour}
+              active={room ? paused : touring}
+              disabled={!room && reducedMotion}
             >
-              <Compass size={17} />
+              {room ? <Pause size={17} /> : <Compass size={17} />}
             </ToolButton>
           </div>
           <div
@@ -767,6 +784,7 @@ export default function CityApp() {
 
       {ready && (
         <ExploreOverlay
+          nearby={nearby}
           room={room}
           inspection={inspection}
           following={following}
@@ -1120,7 +1138,19 @@ export default function CityApp() {
                     <span>
                       <b>Meet the neighbors</b>
                       <small>
-                        Click a person to talk or follow. Click a shop to enter.
+                        Click a person to talk or follow. Click a shop to step
+                        inside.
+                      </small>
+                    </span>
+                  </div>
+                  <div>
+                    <Expand size={19} />
+                    <span>
+                      <b>Walk inside</b>
+                      <small>
+                        WASD or ZQSD to walk. Drag to look, or use the arrow
+                        keys. E talks to someone nearby. Stairs connect the
+                        floors.
                       </small>
                     </span>
                   </div>

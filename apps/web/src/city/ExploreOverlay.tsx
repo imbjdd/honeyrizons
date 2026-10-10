@@ -21,11 +21,13 @@ import {
   type Inspection,
   type RoomLocation,
 } from "./explore";
+import RoomHud from "./RoomHud";
 import { portrait } from "./portraits";
 import type { CityHandle } from "./model";
 
 export default function ExploreOverlay({
   room,
+  nearby,
   inspection,
   following,
   hover,
@@ -35,6 +37,7 @@ export default function ExploreOverlay({
   muted,
 }: {
   room: RoomLocation | null;
+  nearby: string | null;
   inspection: Inspection | null;
   following: string | null;
   hover: HoverTarget | null;
@@ -154,20 +157,27 @@ export default function ExploreOverlay({
                 <span lang="ja">{building.japanese}</span>
               </div>
             </div>
-            <div className="floor-tabs" aria-label="Choose a floor">
-              {building.floors.map((floor, i) => (
-                <button
-                  key={floor.name}
-                  aria-pressed={room.floor === i}
-                  onClick={() => city.current?.enter(building.id, i)}
-                >
-                  <span>{i === 0 ? "G" : i}</span>
-                  {floor.name}
-                </button>
-              ))}
-            </div>
+            <details className="floor-menu" key={room.floor}>
+              <summary>
+                {building.floors[room.floor].name}{" "}
+                <span>Floor {room.floor === 0 ? "G" : room.floor}</span>
+              </summary>
+              <div className="floor-tabs" aria-label="Choose a floor">
+                {building.floors.map((floor, i) => (
+                  <button
+                    key={floor.name}
+                    aria-pressed={room.floor === i}
+                    onClick={() => city.current?.enter(building.id, i)}
+                  >
+                    <span>{i === 0 ? "G" : i}</span>
+                    {floor.name}
+                  </button>
+                ))}
+              </div>
+            </details>
             <p>{building.floors[room.floor].description}</p>
           </section>
+          <RoomHud city={city} nearby={nearby} blocked={!!inspection} />
           <div className="room-people glass" aria-label="People in this room">
             <span>In here</span>
             {roomResidents(room).map((person) => (

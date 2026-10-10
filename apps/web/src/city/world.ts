@@ -76,14 +76,14 @@ export function buildWorld(scene: THREE.Group): CityWorld {
   const box = geo.box.bind(geo);
   const sign = geo.sign.bind(geo);
   const palettes = [
-    "#dcccae",
-    "#92aebe",
-    "#7aa4a3",
-    "#d9a292",
-    "#8999b1",
-    "#d9c58e",
-    "#b7a4b9",
-    "#a3bca6",
+    "#f0c979",
+    "#67bddd",
+    "#32aaa8",
+    "#f49375",
+    "#7d9ce0",
+    "#f7c64f",
+    "#bf95d9",
+    "#8cc889",
   ];
   const trim = "#3f6572";
 
@@ -94,7 +94,7 @@ export function buildWorld(scene: THREE.Group): CityWorld {
     box(x, 2.1 * scale, z, 0.36 * scale, 3.1 * scale, 0.36 * scale, "#80654c");
     const colors = pink
       ? ["#d989b2", "#eaa7c8", "#cd79a4", "#edb6d1"]
-      : ["#6c9d59", "#578c50", "#83ab65", "#649650"];
+      : ["#61b346", "#329257", "#9ecf4d", "#4ca758"];
     for (let i = 0; i < 21; i++) {
       const angle = i * 2.4;
       const radius = i < 7 ? 0.45 : 1.12;

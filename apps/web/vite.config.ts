@@ -9,7 +9,8 @@ export default defineConfig({
   },
   build: {
     // Keep flag SVGs as separate files so only the flags on screen are downloaded.
-    assetsInlineLimit: (file) => (file.includes("circle-flags") ? false : undefined),
+    assetsInlineLimit: (file) =>
+      file.includes("circle-flags") ? false : undefined,
   },
   server: {
     port: 5173,

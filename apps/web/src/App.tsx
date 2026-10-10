@@ -2,7 +2,10 @@ import { lazy, Suspense } from "react";
 import CityApp from "./city/CityApp";
 
 const Dashboard = lazy(async () => {
-  await import("./legacy/dashboard.css");
+  await Promise.all([
+    import("./legacy/dashboard.css"),
+    import("./legacy/fonts.css"),
+  ]);
   return import("./legacy/Dashboard");
 });
 

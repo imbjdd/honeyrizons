@@ -18,7 +18,7 @@ bun run build:web
 bun run typecheck
 ```
 
-The original dashboard is preserved at `/dashboard`. That route still uses the existing API when it is running.
+The existing dashboard is preserved at `/dashboard`. That route still uses the existing API when it is running.
 
 ## Explore
 

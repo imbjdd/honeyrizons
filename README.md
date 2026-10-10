@@ -14,7 +14,7 @@ bun run dev:web    # frontend seul, sans API ni honeypot, sur :5173
 bun run build:web
 ```
 
-Le dashboard original reste accessible sur `/dashboard`. Les captures, la vidéo, les instructions et les points d'intégration futurs sont dans [docs/city](docs/city/README.md).
+Le dashboard existant reste accessible sur `/dashboard`. Les captures, la vidéo, les instructions et les points d'intégration futurs sont dans [docs/city](docs/city/README.md).
 
 ```
 apps/

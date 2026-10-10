@@ -7,6 +7,8 @@ Checked in the T3 Code collaborative browser on October 10, 2026.
 - `bun run build:web`: TypeScript and Vite production build pass.
 - `bun run typecheck`: web, API and shared package typechecks pass.
 - `git diff --check`: pass.
+- `bun install --frozen-lockfile`: pass.
+- The concurrent ObsidianUI dashboard update from `main` is preserved at `/dashboard`, including its components, dependencies, aliases and styles. The dashboard entry and stylesheet match that upstream revision byte for byte. Its fonts load locally only on that route.
 
 ## Browser checks
 

@@ -29,4 +29,4 @@ The city fills the viewport. Its main avenue runs across the middle of the camer
 
 The source is a 3D world, so a conventional dashboard or landing page would miss the brief. The scene receives most of the detail. There are no decorative charts or cards over the default city view. Honeyrizons replaces the blockchain content with five honeypot protocol districts and clearly labeled demo events. Geometry and textures are authored locally; reference screenshots are research material, not the render layer.
 
-The frontend runs independently of the honeypot. Camera movement, selection, activity search, filters, day/night, sound, photo export, and pause are real interactions. A local demo source is the future integration boundary. The original dashboard remains available at `/dashboard`.
+The frontend runs independently of the honeypot. Camera movement, selection, activity search, filters, day/night, sound, photo export, and pause are real interactions. A local demo source is the future integration boundary. The existing dashboard remains available at `/dashboard`.

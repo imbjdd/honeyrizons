@@ -1,11 +1,12 @@
 // Tails the beelzebub JSON log and exposes events over HTTP + Server-Sent Events.
-import { existsSync, statSync, openSync, readSync, closeSync } from "node:fs";
+import { existsSync, statSync, openSync, readSync, closeSync, readdirSync, readFileSync } from "node:fs";
 import { join, resolve } from "node:path";
-import type { HoneypotEvent } from "@honeyrizons/shared";
+import type { HoneypotEvent, HoneypotService } from "@honeyrizons/shared";
 
 const LOG_PATH = resolve(process.env.LOG_PATH ?? join(import.meta.dir, "../../../logs/beelzebub.log"));
 const PORT = Number(process.env.PORT ?? 4000);
 const MAX_EVENTS = Number(process.env.MAX_EVENTS ?? 10000);
+const SERVICES_DIR = resolve(process.env.SERVICES_DIR ?? join(import.meta.dir, "../../honeypot/config/services"));
 const DIST = resolve(process.env.WEB_DIST ?? join(import.meta.dir, "../../web/dist"));
 
 const events: HoneypotEvent[] = [];
@@ -58,6 +59,23 @@ function poll() {
 poll();
 setInterval(poll, 500);
 
+// Only the top-level scalar keys we display are needed, so a full YAML parser isn't worth it.
+function readServices(): HoneypotService[] {
+  if (!existsSync(SERVICES_DIR)) return [];
+  return readdirSync(SERVICES_DIR)
+    .filter((f) => /\.ya?ml$/.test(f))
+    .map((file) => {
+      const text = readFileSync(join(SERVICES_DIR, file), "utf8");
+      const field = (key: string) => text.match(new RegExp(`^${key}:\\s*["']?(.*?)["']?\\s*$`, "m"))?.[1] ?? "";
+      return {
+        file,
+        protocol: field("protocol").toUpperCase(),
+        address: field("address"),
+        description: field("description"),
+      };
+    });
+}
+
 // Keep SSE connections alive through proxies.
 setInterval(() => {
   const ping = encoder.encode(": ping\n\n");
@@ -96,6 +114,10 @@ Bun.serve({
       return new Response(stream, {
         headers: { "Content-Type": "text/event-stream", "Cache-Control": "no-cache", Connection: "keep-alive" },
       });
+    }
+
+    if (url.pathname === "/api/services") {
+      return Response.json(readServices());
     }
 
     if (url.pathname === "/api/health") {

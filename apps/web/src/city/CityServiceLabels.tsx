@@ -59,14 +59,15 @@ export function CityServiceLabels({
               if (el) refs.current.set(site.building, el);
               else refs.current.delete(site.building);
             }}
-            className={cn("city-label", selected === site.building && "is-selected", threat === "critical" && "is-critical")}
+            className={cn("city-label", selected === site.building && "is-selected")}
+            data-status={site.state.status}
             style={{ "--glow": threat ? SEVERITY_GLOW[threat] : "rgba(255,255,255,0.35)" } as CSSProperties}
             onClick={() => select(site.building)}
             aria-pressed={selected === site.building}
           >
             <i aria-hidden="true" />
             <span>{serviceName(site)}</span>
-            <b>{site.sessions}</b>
+            {site.state.status === "besieged" ? <em>surge</em> : <b>{site.sessions}</b>}
           </button>
         );
       })}

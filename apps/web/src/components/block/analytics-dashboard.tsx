@@ -22,7 +22,7 @@ import {
   type AnalyticsDashboardPage,
   type AnalyticsDashboardStatus,
 } from "@/components/analytics-dashboard/context";
-import type { IntelSnapshot } from "@honeyrizons/shared";
+import type { ChronicleEvent, IntelSnapshot } from "@honeyrizons/shared";
 import type { AnalyticsDashboardData } from "@/components/analytics-dashboard/data";
 import { SessionDetails, type Phase } from "@/components/analytics-dashboard/details";
 import { CityIcon, HomeIcon, PanelIcon, ServerIcon, SettingsIcon, TerminalIcon } from "@/components/analytics-dashboard/icons";
@@ -63,6 +63,8 @@ export interface AnalyticsDashboardProps {
   status: AnalyticsDashboardStatus;
   /** Automatic triage results pushed by the API. */
   intel: IntelSnapshot;
+  /** Append-only log of how the attack surface changed. */
+  chronicle: ChronicleEvent[];
   /** Reference time for relative dates; tick it to keep "x min ago" fresh. */
   now: number;
   /** Product name and optional logo at the top of the sidebar. */
@@ -99,6 +101,7 @@ export function AnalyticsDashboard({
   data,
   status,
   intel,
+  chronicle,
   now,
   brand = { name: "Honeyrizons" },
   page: pageProp,
@@ -219,6 +222,7 @@ export function AnalyticsDashboard({
       data,
       status,
       intel,
+      chronicle,
       now,
       uid,
       selected,
@@ -227,7 +231,7 @@ export function AnalyticsDashboard({
       accent,
       setAccent,
     };
-  }, [data, status, intel, now, uid, selected, shown, navigate, accent, setAccent]);
+  }, [data, status, intel, chronicle, now, uid, selected, shown, navigate, accent, setAccent]);
 
   const activeIndex = NAV.findIndex((item) => item.page === page);
   const title = NAV[activeIndex]?.label ?? "";

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import type { HoneypotEvent, HoneypotService, IntelPatch, IntelSnapshot } from "@honeyrizons/shared";
+import type { ChronicleEvent, ChronicleSnapshot, HoneypotEvent, HoneypotService, IntelPatch, IntelSnapshot } from "@honeyrizons/shared";
 import { AnalyticsDashboard } from "@/components/block/analytics-dashboard";
 import { buildDashboardData } from "@/components/analytics-dashboard/data";
 import { usePageRoute } from "./route";
@@ -22,12 +22,21 @@ function applyPatch(base: IntelSnapshot, patch: IntelPatch): IntelSnapshot {
   };
 }
 
+/** Events can arrive over SSE before the snapshot lands, so merging is by id rather than by order. */
+function mergeChronicle(base: ChronicleEvent[], extra: ChronicleEvent[]): ChronicleEvent[] {
+  if (extra.length === 0) return base;
+  const byId = new Map(base.map((e) => [e.id, e]));
+  for (const e of extra) byId.set(e.id, e);
+  return [...byId.values()].sort((a, b) => a.at - b.at);
+}
+
 function useHoneypot() {
   const [events, setEvents] = useState<HoneypotEvent[]>([]);
   const [services, setServices] = useState<HoneypotService[]>([]);
   const [logPath, setLogPath] = useState<string>();
   const [home, setHome] = useState({ lat: 48.8566, lon: 2.3522 });
   const [intel, setIntel] = useState<IntelSnapshot>(EMPTY_INTEL);
+  const [chronicle, setChronicle] = useState<ChronicleEvent[]>([]);
   const [connected, setConnected] = useState(false);
 
   useEffect(() => {
@@ -65,7 +74,15 @@ function useHoneypot() {
             }));
           })
           .catch(() => {});
+        fetch("/api/chronicle")
+          .then((r) => r.json())
+          .then((snapshot: ChronicleSnapshot) => !cancelled && setChronicle((early) => mergeChronicle(snapshot.events, early)))
+          .catch(() => {});
         source = new EventSource("/api/stream");
+        source.addEventListener("chronicle", (msg) => {
+          const fresh = JSON.parse((msg as MessageEvent<string>).data) as ChronicleEvent[];
+          setChronicle((prev) => mergeChronicle(prev, fresh));
+        });
         source.addEventListener("intel", (msg) => {
           const patch = JSON.parse((msg as MessageEvent<string>).data) as IntelPatch;
           setIntel((prev) => applyPatch(prev, patch));
@@ -89,7 +106,7 @@ function useHoneypot() {
     };
   }, []);
 
-  return { events, services, logPath, home, intel, connected };
+  return { events, services, logPath, home, intel, chronicle, connected };
 }
 
 function useNow(intervalMs: number) {
@@ -102,7 +119,7 @@ function useNow(intervalMs: number) {
 }
 
 export default function App() {
-  const { events, services, logPath, home, intel, connected } = useHoneypot();
+  const { events, services, logPath, home, intel, chronicle, connected } = useHoneypot();
   const [page, setPage] = usePageRoute();
   const tick = useNow(30_000);
   // Recompute against the latest event too, so new activity shows up immediately.
@@ -116,6 +133,7 @@ export default function App() {
         now={now}
         status={{ connected, logPath, home, totalEvents: events.length }}
         intel={intel}
+        chronicle={chronicle}
         page={page}
         onPageChange={setPage}
         brand={{ name: "Honeyrizons", logo: <span style={{ fontSize: 18, lineHeight: 1 }}>🍯</span> }}

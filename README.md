@@ -82,6 +82,27 @@ passed as delimited, untrusted data.
 Setup: `cp apps/api/.env.example apps/api/.env` and set `OPENAI_API_KEY`. The `.env` file is git-ignored. Without a key,
 sessions are still classified by the local rules.
 
+## City chronicle
+
+The city is not a live snapshot that gets overwritten; it is a **fold over an append-only log**. The API derives that
+log from traffic it already has and appends only what is new:
+
+| Event | When it is recorded |
+| --- | --- |
+| `genesis` / `service.exposed` / `service.withdrawn` | the attack surface changes |
+| `service.discovered` | attackers find a service for the first time |
+| `service.status` | a service goes quiet, active, or under a surge (with hysteresis, so a burst has to really subside) |
+| `threat.emerged` | the analyst returns a medium-or-worse verdict for a behaviour not seen before |
+| `campaign.spread` | one behaviour reaches 5, 25, 100 or 500 distinct addresses |
+| `milestone` | the honeypot passes 100, 500, 1 000, 5 000 or 10 000 sessions |
+
+Events are backdated to the traffic that caused them, never to the tick that noticed, and clamped so nothing can
+happen to a service before it was exposed. `foldChronicle(events, until)` replays the city exactly as it stood at any
+instant, which is what the timeline scrubs through: service states, session counts and the attackers in the streets
+all rewind together. The log lives in `logs/chronicle.json` and keeps 30 days.
+
+Rules and replay are covered by `bun test tests/chronicle.test.ts`.
+
 ## Exposed services
 
 | Service              | Port | Config                                              |

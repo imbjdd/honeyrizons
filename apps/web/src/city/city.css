@@ -340,8 +340,28 @@
   background: var(--glow);
 }
 
-.obsidian-analytics-dashboard .city-label.is-critical i {
+/* The dot carries the chronicle's state: a service nobody has found yet reads as dormant, one under a surge beats. */
+.obsidian-analytics-dashboard .city-label[data-status="untouched"] {
+  opacity: 0.5;
+}
+
+.obsidian-analytics-dashboard .city-label[data-status="besieged"] i {
   animation: city-alert 1.4s ease-out infinite;
+}
+
+.obsidian-analytics-dashboard .city-label[data-status="besieged"] {
+  box-shadow:
+    0 0 0 1px var(--glow),
+    0 6px 18px rgba(0, 0, 0, 0.35);
+}
+
+.obsidian-analytics-dashboard .city-label em {
+  color: var(--glow);
+  font-size: 10.5px;
+  font-style: normal;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
 }
 
 .obsidian-analytics-dashboard .city-label b {
@@ -361,7 +381,7 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .obsidian-analytics-dashboard .city-label.is-critical i {
+  .obsidian-analytics-dashboard .city-label[data-status="besieged"] i {
     animation: none;
   }
 }
@@ -448,7 +468,8 @@
 
 .obsidian-analytics-dashboard .city-feed {
   left: 12px;
-  bottom: 12px;
+  /* Clears the timeline along the bottom edge. */
+  bottom: 92px;
   width: 360px;
   padding: 8px 6px 4px;
 }
@@ -1013,5 +1034,145 @@
     flex-wrap: wrap;
     justify-content: flex-end;
     max-width: 260px;
+  }
+}
+
+
+/* ───────── Timeline: scrub through the city's chronicle ───────── */
+
+.obsidian-analytics-dashboard .city-timeline {
+  left: 12px;
+  right: 12px;
+  bottom: 12px;
+  padding: 9px 14px 7px;
+}
+
+.obsidian-analytics-dashboard .city-timeline.is-rewound {
+  box-shadow:
+    0 0 0 1px color-mix(in oklab, var(--accent) 45%, transparent),
+    0 12px 32px rgba(0, 0, 0, 0.35);
+}
+
+.obsidian-analytics-dashboard .city-timeline-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 7px;
+}
+
+.obsidian-analytics-dashboard .city-timeline-when {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  margin: 0 4px 0 2px;
+  color: var(--text);
+  font-size: 12.5px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.obsidian-analytics-dashboard .city-timeline-when svg {
+  color: var(--accent);
+}
+
+.obsidian-analytics-dashboard .city-timeline-event {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  min-width: 0;
+  margin: 0;
+  color: var(--text-2);
+  font-size: 12.5px;
+}
+
+.obsidian-analytics-dashboard .city-timeline-event span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.obsidian-analytics-dashboard .city-timeline-live {
+  flex: none;
+  height: 26px;
+  padding: 0 10px;
+  font-size: 12px;
+}
+
+.obsidian-analytics-dashboard .city-timeline-track {
+  position: relative;
+  height: 20px;
+  cursor: pointer;
+  touch-action: none;
+}
+
+.obsidian-analytics-dashboard .city-timeline-track::before {
+  content: "";
+  position: absolute;
+  inset: 9px 0 auto;
+  height: 3px;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.obsidian-analytics-dashboard .city-timeline-track:focus-visible {
+  outline: none;
+}
+
+.obsidian-analytics-dashboard .city-timeline-track:focus-visible::before {
+  box-shadow: 0 0 0 2px color-mix(in oklab, var(--accent) 70%, transparent);
+}
+
+.obsidian-analytics-dashboard .city-timeline-fill {
+  position: absolute;
+  top: 9px;
+  left: 0;
+  height: 3px;
+  border-radius: 2px;
+  background: color-mix(in oklab, var(--accent) 55%, transparent);
+}
+
+.obsidian-analytics-dashboard .city-timeline-mark {
+  position: absolute;
+  top: 6px;
+  width: 3px;
+  height: 9px;
+  margin-left: -1.5px;
+  border-radius: 2px;
+  background: var(--c);
+  opacity: 0.65;
+  pointer-events: none;
+}
+
+.obsidian-analytics-dashboard .city-timeline-mark[data-strong="true"] {
+  top: 3px;
+  width: 4px;
+  height: 15px;
+  margin-left: -2px;
+  opacity: 1;
+}
+
+.obsidian-analytics-dashboard .city-timeline-handle {
+  position: absolute;
+  top: 2px;
+  width: 4px;
+  height: 17px;
+  margin-left: -2px;
+  border-radius: 3px;
+  background: var(--text);
+  box-shadow: 0 0 0 3px rgba(18, 18, 19, 0.75);
+  pointer-events: none;
+}
+
+.obsidian-analytics-dashboard .city-timeline-scale {
+  display: flex;
+  justify-content: space-between;
+  color: var(--text-3);
+  font-size: 10.5px;
+}
+
+@container page (max-width: 760px) {
+  .obsidian-analytics-dashboard .city-timeline-event {
+    display: none;
   }
 }

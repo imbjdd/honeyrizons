@@ -9,11 +9,15 @@
   },
   "dependencies": {
     "@honeyrizons/shared": "workspace:*",
+    "clsx": "^2.1.1",
+    "motion": "^14.1.0",
     "react": "^19.0.0",
-    "react-dom": "^19.0.0"
+    "react-dom": "^19.0.0",
+    "tailwind-merge": "^3.7.0"
   },
   "devDependencies": {
     "@honeyrizons/tsconfig": "workspace:*",
+    "@types/node": "^26.6.5",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
     "@vitejs/plugin-react": "^5.0.0",

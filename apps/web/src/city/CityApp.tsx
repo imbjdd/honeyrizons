@@ -483,6 +483,26 @@ export default function CityApp() {
             <i />
             Demo city
           </span>
+          {/* Jump to the live analytics dashboard (served at /dashboard). */}
+          <a
+            className="glass"
+            href="/dashboard"
+            aria-label="Open the live dashboard"
+            style={{
+              display: "inline-flex",
+              alignItems: "center",
+              gap: 6,
+              padding: "6px 12px",
+              borderRadius: 999,
+              textDecoration: "none",
+              color: "inherit",
+              font: "inherit",
+              whiteSpace: "nowrap",
+            }}
+          >
+            <Shield size={15} />
+            <span>Dashboard</span>
+          </a>
         </header>
 
         <div

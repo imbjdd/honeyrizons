@@ -21,7 +21,7 @@ import {
 } from "@/components/analytics-dashboard/context";
 import type { AnalyticsDashboardData } from "@/components/analytics-dashboard/data";
 import { SessionDetails, type Phase } from "@/components/analytics-dashboard/details";
-import { HomeIcon, PanelIcon, ServerIcon, SettingsIcon, TerminalIcon } from "@/components/analytics-dashboard/icons";
+import { GlobeIcon, HomeIcon, PanelIcon, ServerIcon, SettingsIcon, TerminalIcon } from "@/components/analytics-dashboard/icons";
 import { OverviewPage, ServicesPage, SessionsPage, SettingsPage } from "@/components/analytics-dashboard/pages";
 import "./analytics-dashboard.css";
 
@@ -249,6 +249,14 @@ export function AnalyticsDashboard({
                 {brand.name}
               </span>
             </button>
+
+            {/* Back to the 3D city map served at the site root. */}
+            <a className="rail-btn press has-tip tip-right" data-tip="City map" aria-label="Back to the city map" href="/">
+              <GlobeIcon size={19} strokeWidth={1.7} className="rail-icon" />
+              <span className="rail-label" aria-hidden="true">
+                City map
+              </span>
+            </a>
 
             <div className="rail-nav" style={{ "--active": Math.max(0, activeIndex) } as CSSProperties}>
               <span className="rail-indicator" aria-hidden="true" data-hidden={activeIndex < 0} />

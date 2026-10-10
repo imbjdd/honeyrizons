@@ -1,3 +1,9 @@
+import type {
+  BuildingId,
+  HoverTarget,
+  Inspection,
+  RoomLocation,
+} from "./explore";
 export type Protocol = "SSH" | "HTTP" | "TELNET" | "MYSQL" | "REDIS";
 export type Theme = "day" | "night";
 export type DataView = "city" | "protocols" | "traffic" | "threats";
@@ -60,7 +66,7 @@ export const districts: District[] = [
     color: "#7caec7",
     position: [1, 0, 23],
     description:
-      "Fast connections and a little room to breathe. The city's blue-green garden district.",
+      "The greenhouse and roof gardens receive the city's Redis connections.",
     port: 6379,
   },
 ];
@@ -164,6 +170,10 @@ export interface CityOptions {
   onError: (message: string) => void;
   onInteraction: () => void;
   onPhotoSaved: () => void;
+  onInspect: (inspection: Inspection | null) => void;
+  onRoomChange: (room: RoomLocation | null) => void;
+  onFollowChange: (id: string | null) => void;
+  onHover: (target: HoverTarget | null) => void;
 }
 
 export interface CityHandle {
@@ -174,4 +184,9 @@ export interface CityHandle {
   tour: (enabled: boolean) => void;
   capture: () => void;
   pulse: (protocol: Protocol) => void;
+  enter: (building: BuildingId, floor?: number) => void;
+  exit: () => void;
+  inspect: (id: string | null) => void;
+  follow: (id: string | null) => void;
+  shopAction: (action: "coffee" | "record" | "water") => void;
 }

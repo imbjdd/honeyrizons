@@ -51,7 +51,7 @@ export default function CityCanvas({
     <canvas
       ref={canvas}
       className="city-canvas"
-      aria-label="Interactive voxel city. Drag to pan, scroll to zoom, or use the camera and district controls."
+      aria-label="Interactive city with clickable people and shops. Drag to pan and scroll to zoom. Places lists shops and residents for keyboard navigation."
       role="img"
     />
   );

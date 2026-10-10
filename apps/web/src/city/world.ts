@@ -1,9 +1,11 @@
 import * as THREE from "three";
 import { CityGeometry, movingMesh, seededRandom } from "./geometry";
 import { districts, type Protocol } from "./model";
+import { CharacterArt, type CitizenSprite } from "./characters";
+import { buildings, residents, residentById } from "./explore";
 
 export interface MovingActor {
-  mesh: THREE.Mesh;
+  mesh: THREE.Object3D;
   axis: "x" | "z";
   lane: number;
   speed: number;
@@ -11,11 +13,15 @@ export interface MovingActor {
   extent: number;
   height: number;
   pedestrian?: boolean;
+  citizen?: CitizenSprite;
 }
 export interface CityWorld {
   geometry: CityGeometry;
   actors: MovingActor[];
-  picks: THREE.Mesh[];
+  picks: THREE.Object3D[];
+  people: CitizenSprite[];
+  bubbles: { bubble: THREE.Sprite; person: CitizenSprite }[];
+  art: CharacterArt;
   overlays: THREE.Mesh[];
   water: THREE.Mesh;
   beacon: THREE.Group;
@@ -24,11 +30,14 @@ export interface CityWorld {
   dispose: () => void;
 }
 
-export function buildWorld(scene: THREE.Scene): CityWorld {
+export function buildWorld(scene: THREE.Group): CityWorld {
   const geo = new CityGeometry();
   const random = seededRandom(8102026);
   const actors: MovingActor[] = [];
-  const picks: THREE.Mesh[] = [];
+  const picks: THREE.Object3D[] = [];
+  const people: CitizenSprite[] = [];
+  const bubbles: { bubble: THREE.Sprite; person: CitizenSprite }[] = [];
+  const art = new CharacterArt();
   const overlays: THREE.Mesh[] = [];
   const extraGeometries = new Set<THREE.BufferGeometry>();
   const extraMaterials = new Set<THREE.Material>();
@@ -67,16 +76,16 @@ export function buildWorld(scene: THREE.Scene): CityWorld {
   const box = geo.box.bind(geo);
   const sign = geo.sign.bind(geo);
   const palettes = [
-    "#d4c9b9",
-    "#adb8c0",
-    "#b6b0a9",
-    "#ccb3a2",
-    "#999fa9",
-    "#c4c2b1",
-    "#c3b6af",
-    "#bcc9c0",
+    "#dcccae",
+    "#92aebe",
+    "#7aa4a3",
+    "#d9a292",
+    "#8999b1",
+    "#d9c58e",
+    "#b7a4b9",
+    "#a3bca6",
   ];
-  const trim = "#5b6269";
+  const trim = "#3f6572";
 
   function tree(x: number, z: number, pink = false, scale = 1) {
     const y = 0.38;
@@ -178,6 +187,7 @@ export function buildWorld(scene: THREE.Scene): CityWorld {
       for (let dx = -w / 2 + 0.9; dx < w / 2 - 0.5; dx += 0.65)
         geo.prop("leaf", x + dx, y + 0.72, z + dz, 0.34, 0.35, 0.34, "#70945b");
     }
+    if (Math.round(x) % 3 === 0) return;
     for (const dx of [-2, 2])
       for (const dz of [-1.3, 1.3])
         box(x + dx, y + 1.3, z + dz, 0.14, 2.6, 0.14, "#9b7a51");
@@ -239,7 +249,15 @@ export function buildWorld(scene: THREE.Scene): CityWorld {
     box(x, base + h / 2, z, w, h, d, color);
     box(x, 0.61, z, w + 0.15, 0.42, d + 0.15, trim);
     box(x, h + 0.65, z, w + 0.4, 0.6, d + 0.4, "#62656c");
-    box(x, h + 0.97, z, w - 0.5, 0.06, d - 0.5, "#82848a");
+    box(
+      x,
+      h + 0.97,
+      z,
+      w - 0.5,
+      0.06,
+      d - 0.5,
+      style === "balcony" ? "#809b96" : "#718894",
+    );
     const floorCount = Math.floor((h - 3.6) / 2.65);
     const cols = Math.max(2, Math.floor(w / 2.2));
     const front = z + d / 2 + 0.02;
@@ -248,8 +266,16 @@ export function buildWorld(scene: THREE.Scene): CityWorld {
       for (let col = 0; col < cols; col++) {
         const px = x - w / 2 + ((col + 0.5) * w) / cols;
         const windowColor =
-          random() > 0.66 ? "#e8b966" : random() > 0.5 ? "#9fbfc2" : "#344550";
-        box(px, y, front, 1.45, 1.72, 0.14, "#606467");
+          random() > 0.66 ? "#e8b966" : random() > 0.5 ? "#9fbfc2" : "#335b70";
+        box(
+          px,
+          y,
+          front,
+          style === "office" ? 1.6 : 1.45,
+          1.72,
+          0.14,
+          "#466473",
+        );
         box(
           px,
           y + 0.03,
@@ -259,11 +285,11 @@ export function buildWorld(scene: THREE.Scene): CityWorld {
           0.04,
           windowColor,
           0,
-          windowColor !== "#344550",
+          windowColor !== "#335b70",
         );
         box(px, y - 0.05, front + 0.14, 0.06, 1.42, 0.04, "#d1d0c5");
       }
-      box(x, y - 1.08, front + 0.1, w, 0.16, 0.28, "#dedbcf");
+      box(x, y - 1.08, front + 0.1, w, 0.16, 0.28, "#e9debe");
       for (const side of [-1, 1]) {
         for (let col = 0; col < Math.floor(d / 2.5); col++) {
           const pz = z - d / 2 + ((col + 0.5) * d) / Math.floor(d / 2.5);
@@ -300,6 +326,20 @@ export function buildWorld(scene: THREE.Scene): CityWorld {
           0.16,
           trim,
         );
+    if (style === "shop" && h > 10) {
+      for (let tier = 0; tier < 5; tier++)
+        box(
+          x,
+          h + 1.25 + tier * 0.65,
+          z,
+          w - 1 - tier * 1.4,
+          0.65,
+          d - 2,
+          "#c87e68",
+        );
+      for (const dx of [-w / 2 + 0.35, w / 2 - 0.35])
+        box(x + dx, h / 2 + 2, front + 0.2, 0.42, h - 3, 0.3, accent);
+    }
     // Glass storefront, slim mullions, door and striped canopy.
     for (let col = 0; col < cols; col++) {
       const px = x - w / 2 + ((col + 0.5) * w) / cols;
@@ -388,7 +428,44 @@ export function buildWorld(scene: THREE.Scene): CityWorld {
           );
       }
     if (garden) roofGarden(x, h + 1.05, z + 1, w);
-    if (protocol) {
+    // Each public shop opens a room; the apartment blocks have an information card.
+    const exact = buildings.find(
+      (b) =>
+        Math.abs(b.position[0] - x) < 0.2 && Math.abs(b.position[2] - z) < 0.2,
+    );
+    if (exact) {
+      box(x + w * 0.27, 1.78, front + 0.21, 1.5, 2.55, 0.14, "#2d5b6b");
+      box(
+        x + w * 0.27,
+        1.78,
+        front + 0.31,
+        1.25,
+        2.3,
+        0.08,
+        "#9fc3bf",
+        0,
+        true,
+      );
+      box(x + w * 0.3, 1.5, front + 0.39, 0.08, 0.4, 0.06, "#f4dca1");
+      box(x + w * 0.27, 0.51, front + 0.8, 1.8, 0.08, 1.1, accent);
+      sign(
+        "Open",
+        x + w * 0.27,
+        2.25,
+        front + 0.41,
+        0.82,
+        0.43,
+        "#335765",
+        "#f3d59b",
+      );
+    }
+    const nearby = buildings.reduce((a, b) =>
+      Math.hypot(a.position[0] - x, a.position[2] - z) <
+      Math.hypot(b.position[0] - x, b.position[2] - z)
+        ? a
+        : b,
+    );
+    {
       const pick = new THREE.Mesh(
         new THREE.BoxGeometry(w + 0.5, h + 1, d + 1),
         new THREE.MeshBasicMaterial({
@@ -398,7 +475,18 @@ export function buildWorld(scene: THREE.Scene): CityWorld {
         }),
       );
       pick.position.set(x, h / 2, z);
-      pick.userData.protocol = protocol;
+      pick.userData =
+        exact || protocol || name
+          ? {
+              kind: "building",
+              id: (exact || nearby).id,
+              label: (exact || nearby).name,
+            }
+          : {
+              kind: "prop",
+              title: "Neighborhood apartments",
+              text: "These are private apartments. The café, hotel, record shop, tea house, library and greenhouse are open to visitors.",
+            };
       scene.add(pick);
       picks.push(pick);
     }
@@ -409,13 +497,13 @@ export function buildWorld(scene: THREE.Scene): CityWorld {
   pavement.width = 128;
   pavement.height = 128;
   const ctx = pavement.getContext("2d")!;
-  ctx.fillStyle = "#c9cac6";
+  ctx.fillStyle = "#d4dacf";
   ctx.fillRect(0, 0, 128, 128);
   for (let i = 0; i < 250; i++) {
     ctx.fillStyle = `rgba(100,100,90,${random() * 0.08})`;
     ctx.fillRect(random() * 128, random() * 128, 2, 2);
   }
-  ctx.strokeStyle = "#b6b9b6";
+  ctx.strokeStyle = "#bac7c1";
   ctx.lineWidth = 1;
   for (let n = 0; n <= 128; n += 32) {
     ctx.beginPath();
@@ -447,7 +535,7 @@ export function buildWorld(scene: THREE.Scene): CityWorld {
   // Connected avenues with curb edges, lane markings and zebra crossings.
   for (const z of [-44, 0, 44, -78]) {
     const width = z === 0 ? 11 : 9;
-    box(0, 0.31, z, 160, 0.05, width, "#8b9093");
+    box(0, 0.31, z, 160, 0.05, width, "#586e7d");
     for (const edge of [-1, 1]) {
       box(0, 0.39, z + edge * (width / 2 + 0.16), 160, 0.16, 0.32, "#e4e1d4");
       box(0, 0.351, z + edge * (width / 2 - 0.5), 160, 0.025, 0.08, "#e4c86b");
@@ -460,7 +548,7 @@ export function buildWorld(scene: THREE.Scene): CityWorld {
       }
   }
   for (const x of [-37, 37, -75, 75]) {
-    box(x, 0.34, -1, 9, 0.06, 150, "#8b9093");
+    box(x, 0.34, -1, 9, 0.06, 150, "#586e7d");
     for (const edge of [-1, 1]) {
       box(x + edge * 4.65, 0.39, -1, 0.32, 0.16, 150, "#e4e1d4");
       box(x + edge * 4, 0.383, -1, 0.08, 0.025, 150, "#e4c86b");
@@ -488,7 +576,8 @@ export function buildWorld(scene: THREE.Scene): CityWorld {
     w: 10,
     d: 12,
     h: 15,
-    name: "RAMEN  ラーメン",
+    name: "MIDNIGHT RAMEN",
+    color: "#dca48a",
     accent: "#c77d5a",
     style: "shop",
   });
@@ -497,7 +586,8 @@ export function buildWorld(scene: THREE.Scene): CityWorld {
     z: -18,
     w: 10,
     d: 14,
-    h: 21,
+    h: 17,
+    color: "#819cac",
     style: "balcony",
     accent: "#af8f80",
     garden: true,
@@ -518,8 +608,8 @@ export function buildWorld(scene: THREE.Scene): CityWorld {
     w: 12,
     d: 16,
     h: 29,
-    color: "#d8c7a8",
-    accent: "#b69352",
+    color: "#537e8b",
+    accent: "#ddb86e",
     name: "HONEYRIZONS",
     protocol: "SSH",
   });
@@ -530,7 +620,7 @@ export function buildWorld(scene: THREE.Scene): CityWorld {
     d: 12,
     h: 6.5,
     name: "蜂蜜  HONEY CAFE",
-    color: "#c5b99d",
+    color: "#e2bd6d",
     accent: "#d1a13d",
     garden: false,
   });
@@ -539,8 +629,8 @@ export function buildWorld(scene: THREE.Scene): CityWorld {
     z: -20,
     w: 11,
     d: 16,
-    h: 22,
-    color: "#808f92",
+    h: 16,
+    color: "#78a393",
     name: "GREEN MARKET",
     accent: "#689b83",
     style: "balcony",
@@ -554,7 +644,7 @@ export function buildWorld(scene: THREE.Scene): CityWorld {
     h: 13.5,
     name: "WEB HOTEL",
     accent: "#579c7d",
-    color: "#a1b7a4",
+    color: "#9ebdac",
     protocol: "HTTP",
     style: "balcony",
   });
@@ -563,9 +653,10 @@ export function buildWorld(scene: THREE.Scene): CityWorld {
     z: -19,
     w: 12,
     d: 14,
-    h: 25,
-    name: "RECORDS  レコード",
-    accent: "#927aab",
+    h: 16,
+    name: "SIDE A RECORDS",
+    color: "#c28da0",
+    accent: "#8a597c",
     style: "balcony",
   });
   building({
@@ -582,12 +673,33 @@ export function buildWorld(scene: THREE.Scene): CityWorld {
   // Honey Tower: warm vertical fins, rooftop penthouse and honeycomb crown.
   for (const x of [-20.85, -9.15])
     box(x, 15.2, -11.84, 0.34, 27.3, 0.2, "#bca77c");
-  box(-15, 32.3, -20, 7, 4.3, 9, "#caba97");
-  box(-15, 34.6, -20, 7.5, 0.35, 9.5, "#9f8d69");
+  for (let tier = 0; tier < 4; tier++) {
+    box(
+      -15,
+      30.7 + tier * 1.35,
+      -20,
+      10 - tier * 1.8,
+      1.35,
+      13 - tier * 2,
+      "#6a9298",
+    );
+    box(
+      -15,
+      31.35 + tier * 1.35,
+      -20,
+      10.3 - tier * 1.8,
+      0.16,
+      13.3 - tier * 2,
+      "#d5b369",
+    );
+  }
+  for (const dx of [-4.6, -2.3, 0, 2.3, 4.6])
+    box(-15 + dx, 15.4, -11.77, 0.18, 27.5, 0.25, "#e2c484");
+  box(-15, 35.5, -20, 0.2, 4.5, 0.2, "#e0b765");
   sign("HONEY\nTOWER", -15, 26.65, -11.84, 8.8, 3.05, "#4e5551", "#f3d77e");
   sign("SSH  :2222", -15, 19.2, -11.83, 6.5, 1.25, "#4d5558", "#dfc377");
   sign(
-    "OPEN DOORS\nCURIOUS VISITORS",
+    "CITY POST\nLETTERS & PARCELS",
     -26,
     13,
     -11.34,
@@ -617,10 +729,10 @@ export function buildWorld(scene: THREE.Scene): CityWorld {
       11.4,
       0.25,
       13.1 - i * 1.6,
-      i % 2 ? "#5f7162" : "#4f6559",
+      i % 2 ? "#dfae49" : "#c7993a",
     );
   sign(
-    "A LITTLE CITY.\nA LOT OF STORIES.",
+    "GREEN MARKET\nFresh every morning",
     9,
     8.3,
     -11.8,
@@ -633,7 +745,7 @@ export function buildWorld(scene: THREE.Scene): CityWorld {
   for (const x of [-5.4, 0.4]) box(x, 10.3, -17.4, 0.17, 4.5, 0.17, "#62695c");
   box(-2.5, 11.35, -17.4, 8.7, 3.7, 0.5, "#d0ae61");
   sign(
-    "CITY ACTIVITY\n36 VISITORS / 5 DISTRICTS\nDEMO NEIGHBORHOOD",
+    "HONEY CAFÉ\nCOFFEE 3 / TOAST 4\nOpen until the last tram",
     -2.5,
     11.35,
     -17.13,
@@ -706,6 +818,43 @@ export function buildWorld(scene: THREE.Scene): CityWorld {
   extraGeometries.add(centerCell.geometry);
   box(-15, 35.6, -20, 0.24, 2.2, 0.24, "#7d795e");
 
+  // Flags and pavement signs connect the storefronts to the sidewalk.
+  for (let x = -8; x < 6; x += 1.4) {
+    box(x, 4.1, -9.5, 1.2, 0.035, 0.06, "#536b6c");
+    box(x, 3.85, -9.5, 0.55, 0.45, 0.055, x % 3 < 1 ? "#ddac4e" : "#8db3a4");
+  }
+  box(2.6, 1.1, -9.2, 1.15, 1.4, 0.14, "#b2895e");
+  sign("Coffee\n& toast", 2.6, 1.15, -9.1, 1, 1.2, "#355763", "#f0d199");
+  for (const x of [-27, 54, 62]) {
+    box(x, 1.1, -9.2, 0.8, 1.45, 0.9, "#bd946c");
+    for (let y = 0; y < 3; y++)
+      box(x, 0.6 + y * 0.4, -8.7, 0.7, 0.04, 0.03, "#835f4c");
+  }
+
+  // Shop-specific silhouettes: a giant rooftop vinyl disc and hotel lantern sign.
+  const vinyl = new THREE.Mesh(
+    new THREE.CylinderGeometry(3.4, 3.4, 0.4, 40),
+    geo.material("#354a61"),
+  );
+  vinyl.rotation.x = Math.PI / 2;
+  vinyl.position.set(49, 20.7, -18);
+  vinyl.userData = { kind: "building", id: "records", label: "Side A Records" };
+  scene.add(vinyl);
+  picks.push(vinyl);
+  extraGeometries.add(vinyl.geometry);
+  const label = new THREE.Mesh(
+    new THREE.CylinderGeometry(1.05, 1.05, 0.46, 32),
+    geo.material("#e8ad86", true),
+  );
+  label.rotation.x = Math.PI / 2;
+  label.position.copy(vinyl.position);
+  label.position.z += 0.08;
+  scene.add(label);
+  extraGeometries.add(label.geometry);
+  for (const x of [46, 52]) box(x, 18.7, -18, 0.2, 4.5, 0.2, "#735b72");
+  sign("HOTEL\nホテル", 28.7, 9, -12, 1.8, 7, "#436e67", "#f5d9a0");
+  for (let n = 0; n < 8; n++)
+    box(29.72, 6 + n * 0.85, -12, 0.12, 0.22, 0.16, "#f0c975", 0, true);
   // A little green-tiled tea house with a stepped pitched roof.
   building({
     x: -58,
@@ -768,7 +917,7 @@ export function buildWorld(scene: THREE.Scene): CityWorld {
     w: 12,
     d: 17,
     h: 18,
-    color: "#c6bfcb",
+    color: "#a6a5c4",
     accent: "#9380b1",
     name: "THE ARCHIVE",
     protocol: "MYSQL",
@@ -793,14 +942,14 @@ export function buildWorld(scene: THREE.Scene): CityWorld {
           ? 5 + random() * 7
           : z === -34
             ? 10 + random() * 17
-            : 16 + random() * 17;
+            : 12 + random() * 19;
       building({
         x,
         z,
         w: 9 + random() * 2.7,
         d: z === -34 ? 6 : 12,
         h,
-        style: random() > 0.65 ? "balcony" : "office",
+        style: random() > 0.72 ? "shop" : random() > 0.5 ? "balcony" : "office",
         garden: random() > 0.73,
         ...(z === 61
           ? {
@@ -1123,62 +1272,50 @@ export function buildWorld(scene: THREE.Scene): CityWorld {
     height: 4.85,
   });
 
-  // Small voxel citizens use shared geometry and materials.
-  const citizens: THREE.Mesh[] = [];
-  const clothes = [
-    "#b77d67",
-    "#88a5a1",
-    "#d2b56d",
-    "#8a91ae",
-    "#a2809e",
-    "#87a273",
-  ];
-  for (let v = 0; v < 6; v++) {
-    const mesh = movingMesh([
-      { position: [0, 1.06, 0], size: [0.42, 0.42, 0.38], color: "#d9b79a" },
-      {
-        position: [0, 1.3, 0],
-        size: [0.45, 0.13, 0.43],
-        color: v % 2 ? "#686052" : "#534e4a",
-      },
-      { position: [0, 0.67, 0], size: [0.48, 0.45, 0.3], color: clothes[v] },
-      {
-        position: [-0.31, 0.63, 0],
-        size: [0.15, 0.42, 0.2],
-        color: clothes[v],
-      },
-      { position: [0.31, 0.63, 0], size: [0.15, 0.42, 0.2], color: clothes[v] },
-      {
-        position: [-0.14, 0.27, 0],
-        size: [0.18, 0.42, 0.24],
-        color: "#526270",
-      },
-      { position: [0.14, 0.27, 0], size: [0.18, 0.42, 0.24], color: "#526270" },
-    ]);
-    citizens.push(mesh);
-    extraGeometries.add(mesh.geometry);
-    extraMaterials.add(mesh.material as THREE.Material);
-  }
-  for (let i = 0; i < 90; i++) {
-    const mesh = citizens[i % citizens.length].clone();
-    const scale = 0.85 + random() * 0.32;
-    mesh.scale.setScalar(scale);
-    scene.add(mesh);
-    const axis = i < 62 ? "x" : "z";
+  // Camera-facing pixel citizens. Every visible person can be inspected.
+  for (let i = 0; i < 60; i++) {
+    const resident =
+      i < residents.length ? residents[i] : residentById(`visitor-${i}`);
+    const axis = i < 44 ? "x" : "z";
     const lane =
       axis === "x"
-        ? [8.7, -9.5, 32, -50][i % 4] + random() * 1.5
+        ? [8.9, -9.5, 31.5, -50][i % 4] + random() * 1.2
         : [30, -30, -68, 68][i % 4];
+    const offset =
+      i < 12
+        ? [-12, 24, 8, -25, 0, -44, 22, -57, -26, -16, 3, 35][i]
+        : random() * 130 - 65;
+    const person = art.create(
+      resident,
+      scene,
+      axis === "x" ? offset : lane,
+      0.55,
+      axis === "z" ? offset : lane,
+    );
+    people.push(person);
+    picks.push(person.sprite);
     actors.push({
-      mesh,
+      mesh: person.sprite,
       axis,
       lane,
-      speed: (i % 2 ? 1 : -1) * (0.5 + random() * 0.5),
-      offset: random() * 150,
+      speed: (i % 2 ? 1 : -1) * (0.45 + random() * 0.35),
+      offset,
       extent: axis === "x" ? 69 : 68,
       height: 0.55,
       pedestrian: true,
+      citizen: person,
     });
+    if (i === 0 || i === 3 || i === 8)
+      bubbles.push({
+        bubble: art.bubble(
+          resident.phrase,
+          scene,
+          person.sprite.position.x,
+          4,
+          person.sprite.position.z,
+        ),
+        person,
+      });
   }
 
   // District view colors the pavement; ordinary city view keeps this hidden.
@@ -1239,18 +1376,24 @@ export function buildWorld(scene: THREE.Scene): CityWorld {
     geometry: geo,
     actors,
     picks,
+    people,
+    bubbles,
+    art,
     overlays,
     water,
     beacon,
     nightLights,
     nightProps,
     dispose() {
+      art.dispose();
       geo.dispose();
       extraGeometries.forEach((g) => g.dispose());
       extraMaterials.forEach((m) => m.dispose());
       picks.forEach((p) => {
-        p.geometry.dispose();
-        (p.material as THREE.Material).dispose();
+        if (p instanceof THREE.Mesh) {
+          p.geometry.dispose();
+          (p.material as THREE.Material).dispose();
+        }
       });
     },
   };

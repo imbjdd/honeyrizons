@@ -38,6 +38,14 @@ import {
   X,
 } from "lucide-react";
 import CityCanvas from "./CityCanvas";
+import ExploreOverlay from "./ExploreOverlay";
+import {
+  buildings,
+  residents,
+  type HoverTarget,
+  type Inspection,
+  type RoomLocation,
+} from "./explore";
 import {
   districts,
   type CityEvent,
@@ -70,9 +78,9 @@ const dataViews: {
 }[] = [
   {
     id: "city",
-    title: "The living city",
+    title: "City",
     japanese: "街",
-    description: "Take in the everyday life of Honeyrizons.",
+    description: "Show shops, residents, and traffic.",
   },
   {
     id: "protocols",
@@ -229,6 +237,20 @@ export default function CityApp() {
   const { events, total } = useDemoCity(paused || reducedMotion);
   const { enabled: sound, toggle: toggleSound } = useCitySound();
   const [ready, setReady] = useState(false);
+  const [room, setRoom] = useState<RoomLocation | null>(null);
+  const [inspection, setInspection] = useState<Inspection | null>(null);
+  const [following, setFollowing] = useState<string | null>(null);
+  const [hover, setHover] = useState<HoverTarget | null>(null);
+  const onInspect = useCallback((value: Inspection | null) => {
+    setInspection(value);
+    if (value) setPanel(null);
+  }, []);
+  const onRoomChange = useCallback((value: RoomLocation | null) => {
+    setRoom(value);
+    setPanel(null);
+    setTouring(false);
+    setDropdown(false);
+  }, []);
   const [error, setError] = useState("");
   const [panel, setPanel] = useState<Panel>(null);
   const [district, setDistrict] = useState<Protocol>("SSH");
@@ -271,6 +293,10 @@ export default function CityApp() {
       onSelect,
       onInteraction,
       onPhotoSaved,
+      onInspect,
+      onRoomChange,
+      onFollowChange: setFollowing,
+      onHover: setHover,
     }),
     [
       theme,
@@ -282,6 +308,8 @@ export default function CityApp() {
       onSelect,
       onInteraction,
       onPhotoSaved,
+      onInspect,
+      onRoomChange,
     ],
   );
   useEffect(() => () => window.clearTimeout(noticeTimer.current), []);
@@ -299,6 +327,22 @@ export default function CityApp() {
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
+        if (photo) {
+          setPhoto(false);
+          return;
+        }
+        if (inspection) {
+          city.current?.inspect(null);
+          return;
+        }
+        if (following) {
+          city.current?.follow(null);
+          return;
+        }
+        if (room && !panel && !photo) {
+          city.current?.exit();
+          return;
+        }
         setPanel(null);
         setPhoto(false);
         setDropdown(false);
@@ -329,9 +373,10 @@ export default function CityApp() {
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [theme, selectMode]);
+  }, [theme, selectMode, inspection, following, room, panel, photo]);
 
   function openPanel(next: Panel) {
+    city.current?.inspect(null);
     setPanel((current) => (current === next ? null : next));
     setDropdown(false);
   }
@@ -362,15 +407,17 @@ export default function CityApp() {
   const panelTitles: Record<NonNullable<Panel>, string> = {
     activity: "City activity",
     district: selected.name,
-    views: "A different view",
-    places: "Find your corner",
-    help: "Make yourself at home",
-    about: "Welcome to Honeyrizons",
-    stats: "The city, in numbers",
+    views: "Data views",
+    places: "Places",
+    help: "City controls",
+    about: "About Honeyrizons",
+    stats: "Demo statistics",
   };
 
   return (
-    <main className={`city-app theme-${theme}${photo ? " photo-mode" : ""}`}>
+    <main
+      className={`city-app theme-${theme}${photo ? " photo-mode" : ""}${room ? " in-room" : ""}`}
+    >
       <a href="#city-controls" className="skip-link">
         Skip to city controls
       </a>
@@ -380,17 +427,17 @@ export default function CityApp() {
       {!ready && !error && (
         <div className="city-loader" role="status">
           <HoneyMark size={44} />
-          <span>Building your little city</span>
+          <span>Opening Honeyrizons</span>
           <div className="loader-line">
             <i />
           </div>
-          <small>Good things are taking shape.</small>
+          <small>Loading the street and its shops.</small>
         </div>
       )}
       {error && (
         <div className="city-error" role="alert">
           <HoneyMark size={42} />
-          <h1>The city needs a moment</h1>
+          <h1>The city could not open</h1>
           <p>{error}</p>
           <button
             className="primary-button"
@@ -414,7 +461,7 @@ export default function CityApp() {
                 Honeyrizons<span className="brand-period">.</span>
               </span>
               <span className="brand-tagline">
-                Every connection has a place.
+                Click a person. Step inside a shop.
               </span>
             </span>
           </button>
@@ -585,7 +632,7 @@ export default function CityApp() {
           </button>
           {dropdown && (
             <div className="district-menu glass" id="district-menu">
-              <div className="menu-heading">A place for every connection</div>
+              <div className="menu-heading">Choose a district</div>
               {districts.map((place) => (
                 <button
                   key={place.id}
@@ -610,7 +657,7 @@ export default function CityApp() {
             className="district-more"
             onClick={() => openPanel("district")}
           >
-            Discover this district <ArrowUpRight size={12} />
+            District details <ArrowUpRight size={12} />
           </button>
         </div>
 
@@ -685,9 +732,9 @@ export default function CityApp() {
         </section>
 
         <div className="world-hint">
-          <span>Drag to wander</span>
+          <span>Drag to move</span>
           <i />
-          <span>Scroll to get closer</span>
+          <span>Click a person or a shop</span>
         </div>
         <button
           className="activity-inbox glass"
@@ -713,12 +760,23 @@ export default function CityApp() {
         <div className="city-coordinates" aria-hidden="true">
           HNY / 48°51′ N 2°21′ E{" "}
           <span>
-            {theme === "day"
-              ? "A good day to wander."
-              : "The city never quite sleeps."}
+            {theme === "day" ? "Shops are open." : "Last tram at midnight."}
           </span>
         </div>
       </div>
+
+      {ready && (
+        <ExploreOverlay
+          room={room}
+          inspection={inspection}
+          following={following}
+          hover={hover}
+          city={city}
+          close={() => city.current?.inspect(null)}
+          announce={announce}
+          muted={!sound || paused || reducedMotion}
+        />
+      )}
 
       {panel && !photo && (
         <aside
@@ -751,7 +809,7 @@ export default function CityApp() {
             {panel === "activity" && (
               <>
                 <p className="panel-intro">
-                  Little moments from around the city.
+                  Recent connections across the city.
                   <br />
                   <span>All activity here is simulated.</span>
                 </p>
@@ -902,10 +960,55 @@ export default function CityApp() {
             {panel === "places" && (
               <>
                 <p className="panel-intro">
-                  Five districts. Five open doors.
-                  <br />
-                  Choose a neighborhood to look around.
+                  Open a shop or move to a district.
                 </p>
+                <div className="panel-section-title">Open shops</div>
+                <div className="places-list">
+                  {buildings.map((b) => (
+                    <button
+                      key={b.id}
+                      className="place-card"
+                      onClick={() => city.current?.enter(b.id)}
+                    >
+                      <span className="place-marker" style={{ color: b.color }}>
+                        <Home size={21} />
+                      </span>
+                      <span>
+                        <b>{b.name}</b>
+                        <small>
+                          {b.floors.length}{" "}
+                          {b.floors.length === 1 ? "floor" : "floors"} /{" "}
+                          {b.floors[0].name}
+                        </small>
+                      </span>
+                      <ChevronRight size={15} />
+                    </button>
+                  ))}
+                </div>
+                <div className="panel-section-title">Street regulars</div>
+                <div className="places-list">
+                  {residents.map((person) => (
+                    <button
+                      key={person.id}
+                      className="place-card"
+                      onClick={() => {
+                        if (room) city.current?.exit();
+                        setPanel(null);
+                        city.current?.inspect(person.id);
+                      }}
+                    >
+                      <span className="place-marker">
+                        <MapPin size={18} />
+                      </span>
+                      <span>
+                        <b>{person.name}</b>
+                        <small>{person.role}</small>
+                      </span>
+                      <ChevronRight size={15} />
+                    </button>
+                  ))}
+                </div>
+                <div className="panel-section-title">Districts</div>
                 <div className="places-list">
                   {districts.map((place) => (
                     <button
@@ -936,14 +1039,14 @@ export default function CityApp() {
                   disabled={reducedMotion}
                 >
                   <Compass size={16} />
-                  Take the scenic route
+                  Orbit the city
                 </button>
               </>
             )}
 
             {panel === "views" && (
               <>
-                <p className="panel-intro">Same city. A new way to see it.</p>
+                <p className="panel-intro">Choose what the map shows.</p>
                 <div className="view-options">
                   {dataViews.map((item) => (
                     <button
@@ -985,7 +1088,9 @@ export default function CityApp() {
 
             {panel === "help" && (
               <>
-                <p className="panel-intro">There is no wrong turn here.</p>
+                <p className="panel-intro">
+                  Use the canvas or the controls at the edge.
+                </p>
                 <div className="help-rows">
                   <div>
                     <Expand size={19} />
@@ -1014,18 +1119,20 @@ export default function CityApp() {
                     <MapPin size={19} />
                     <span>
                       <b>Meet the neighbors</b>
-                      <small>Click a landmark or choose a district.</small>
+                      <small>
+                        Click a person to talk or follow. Click a shop to enter.
+                      </small>
                     </span>
                   </div>
                   <div>
                     <Camera size={19} />
                     <span>
-                      <b>Keep a memory</b>
+                      <b>Save a photo</b>
                       <small>Photo mode hides the interface. Save a PNG.</small>
                     </span>
                   </div>
                 </div>
-                <div className="panel-section-title">A few shortcuts</div>
+                <div className="panel-section-title">Keyboard shortcuts</div>
                 <div className="keyboard-shortcuts">
                   <span>
                     Back to the square<kbd>H</kbd>
@@ -1037,7 +1144,7 @@ export default function CityApp() {
                     Pause / resume<kbd>Space</kbd>
                   </span>
                   <span>
-                    Close a panel<kbd>Esc</kbd>
+                    Close / return to street<kbd>Esc</kbd>
                   </span>
                 </div>
                 {reducedMotion && (
@@ -1055,25 +1162,21 @@ export default function CityApp() {
                   <HoneyMark size={64} />
                   <span lang="ja">ようこそ</span>
                 </div>
-                <h3 className="about-title">
-                  A little city.
-                  <br />A lot of stories.
-                </h3>
+                <h3 className="about-title">Explore Honeyrizons</h3>
                 <p className="about-copy">
-                  Every connection has a destination. Here, they arrive as
-                  visitors to a small city of open doors, quiet gardens, and
-                  honey-colored streets.
+                  Nine shops are open. Click a storefront to enter, take the
+                  lift upstairs, or talk to the people inside.
                 </p>
                 <p className="about-copy">
                   Honeyrizons turns honeypot activity into a place you can
-                  explore. For now, this neighborhood runs on demo data. Make
-                  yourself at home.
+                  explore. The city uses local demo sessions until the honeypot
+                  is connected.
                 </p>
                 <button
                   className="primary-button"
                   onClick={() => setPanel(null)}
                 >
-                  Let's wander <ArrowUpRight size={16} />
+                  Explore the city <ArrowUpRight size={16} />
                 </button>
                 <div className="about-credit">
                   Inspired by{" "}

@@ -65,11 +65,11 @@ export class CharacterArt {
     canvas.height = 110;
     const c = canvas.getContext("2d")!;
     c.font = '500 25px "DM Sans"';
-    c.fillStyle = "#263e4c";
+    c.fillStyle = "#1d4165";
     c.beginPath();
     c.roundRect(3, 3, 506, 84, 16);
     c.fill();
-    c.fillStyle = "#fff7df";
+    c.fillStyle = "#edf6ff";
     c.beginPath();
     c.roundRect(6, 6, 500, 78, 13);
     c.fill();
@@ -78,7 +78,7 @@ export class CharacterArt {
     c.lineTo(72, 106);
     c.lineTo(102, 81);
     c.fill();
-    c.fillStyle = "#354a51";
+    c.fillStyle = "#263e5a";
     c.textAlign = "center";
     c.fillText(text, 256, 53, 478);
     const map = new THREE.CanvasTexture(canvas);

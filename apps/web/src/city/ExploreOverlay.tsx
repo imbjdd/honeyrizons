@@ -209,15 +209,18 @@ export default function ExploreOverlay({
           aria-expanded={directory}
         >
           <DoorOpen size={15} />
-          Open shops <span>{buildings.length}</span>
+          Explore buildings <span>{buildings.length}</span>
         </button>
       )}
       {directory && !room && (
-        <section className="shop-directory glass" aria-label="Open shops">
+        <section
+          className="shop-directory glass"
+          aria-label="Explore buildings"
+        >
           <header>
             <h2>Step inside</h2>
             <button
-              aria-label="Close shop directory"
+              aria-label="Close building directory"
               onClick={() => setDirectory(false)}
             >
               <X size={16} />
@@ -339,7 +342,7 @@ export default function ExploreOverlay({
                   <div className="conversation-choices">
                     {(
                       [
-                        { id: "place", text: "Tell me about your shop" },
+                        { id: "place", text: "Tell me about this place" },
                         { id: "activity", text: "Who visits this district?" },
                         { id: "tip", text: "Where should I go next?" },
                       ] as const

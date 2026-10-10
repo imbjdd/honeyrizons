@@ -19,7 +19,7 @@ export class CityGeometry {
   private primitives = {
     box: new THREE.BoxGeometry(1, 1, 1),
     leaf: new THREE.IcosahedronGeometry(1, 1),
-    cylinder: new THREE.CylinderGeometry(0.5, 0.5, 1, 8),
+    cylinder: new THREE.CylinderGeometry(0.5, 0.5, 1, 24),
   };
 
   material(color: string, glow = false) {

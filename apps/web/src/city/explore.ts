@@ -9,17 +9,71 @@ export type BuildingId =
   | "teahouse"
   | "gardens"
   | "ramen"
-  | "books";
+  | "books"
+  | "arcade"
+  | "robotics"
+  | "aquarium"
+  | "transit"
+  | "cinema"
+  | "fashion"
+  | "studio"
+  | "clinic"
+  | "observatory"
+  | "skyport"
+  | "gym"
+  | "market"
+  | "apartments"
+  | "energy"
+  | "gallery";
 export type RoomStyle =
-  | "lobby"
-  | "control"
-  | "cafe"
-  | "records"
-  | "library"
-  | "garden"
+  | "arrival"
+  | "command"
+  | "skydeck"
+  | "espresso"
+  | "atelier"
+  | "hotel"
+  | "pool"
+  | "vinyl"
+  | "sound"
+  | "archive"
+  | "servers"
   | "tea"
+  | "zen"
+  | "hydroponics"
+  | "orchard"
   | "ramen"
-  | "rooftop";
+  | "books"
+  | "arcade"
+  | "esports"
+  | "assembly"
+  | "robotlab"
+  | "aquarium"
+  | "oceanlab"
+  | "concourse"
+  | "dispatch"
+  | "cinema"
+  | "projection"
+  | "runway"
+  | "wardrobe"
+  | "fabrication"
+  | "print"
+  | "clinic"
+  | "recovery"
+  | "planetarium"
+  | "telescope"
+  | "hangar"
+  | "flight"
+  | "gym"
+  | "track"
+  | "market"
+  | "kitchen"
+  | "apartment"
+  | "common"
+  | "reactor"
+  | "battery"
+  | "gallery";
+export type BuildingForm =
+  "spire" | "terrace" | "round" | "portal" | "slab" | "sawtooth";
 export interface Building {
   id: BuildingId;
   name: string;
@@ -27,185 +81,389 @@ export interface Building {
   color: string;
   protocol: Protocol;
   position: [number, number, number];
+  exterior: {
+    width: number;
+    depth: number;
+    height: number;
+    form: BuildingForm;
+  };
   floors: { name: string; style: RoomStyle; description: string }[];
 }
+const floor = (name: string, style: RoomStyle, description: string) => ({
+  name,
+  style,
+  description,
+});
+const venue = (
+  id: BuildingId,
+  name: string,
+  color: string,
+  protocol: Protocol,
+  x: number,
+  z: number,
+  height: number,
+  form: BuildingForm,
+  floors: Building["floors"],
+  width = 19,
+  depth = 21,
+): Building => ({
+  id,
+  name,
+  japanese: "",
+  color,
+  protocol,
+  position: [x, 0, z],
+  exterior: { width, depth, height, form },
+  floors,
+});
+
 export const buildings: Building[] = [
-  {
-    id: "tower",
-    name: "Honey Tower",
-    japanese: "ハニータワー",
-    color: "#efb83f",
-    protocol: "SSH",
-    position: [-15, 0, -20],
-    floors: [
-      {
-        name: "Reception",
-        style: "lobby",
-        description: "The front desk keeps a record of every visitor.",
-      },
-      {
-        name: "Control room",
-        style: "control",
-        description: "Terminal screens glow above the main avenue.",
-      },
-      {
-        name: "Roof terrace",
-        style: "rooftop",
-        description: "A quiet table above the tram line.",
-      },
+  venue("tower", "Honey Tower", "#ffce24", "SSH", -14, -58, 53, "spire", [
+    floor(
+      "Arrival hall",
+      "arrival",
+      "A floating honeycomb sculpture hangs over the reception island.",
+    ),
+    floor(
+      "City command",
+      "command",
+      "A curved bank of terminals faces a live model of the city.",
+    ),
+    floor(
+      "Sky deck",
+      "skydeck",
+      "The observation ring sits above the maglev line.",
+    ),
+  ]),
+  venue("cafe", "Honey Café", "#ffb800", "SSH", -14, -26, 12, "round", [
+    floor(
+      "Espresso lab",
+      "espresso",
+      "A circular coffee bar and yellow booths surround the espresso machine.",
+    ),
+    floor(
+      "Drawing atelier",
+      "atelier",
+      "Lou's easels face a wall of oversized city sketches.",
+    ),
+  ]),
+  venue("hotel", "Web Hotel", "#00e7bc", "HTTP", 14, -26, 27, "terrace", [
+    floor(
+      "Check-in lounge",
+      "hotel",
+      "Luggage pods and a long emerald desk welcome new arrivals.",
+    ),
+    floor(
+      "Infinity lounge",
+      "pool",
+      "An indoor blue pool separates the cabanas from the skyline.",
+    ),
+  ]),
+  venue("records", "Side A Records", "#ff398e", "HTTP", 42, -26, 16, "portal", [
+    floor(
+      "Vinyl exchange",
+      "vinyl",
+      "Crates of records sit beneath a giant wall-mounted turntable.",
+    ),
+    floor(
+      "Sound stage",
+      "sound",
+      "A raised DJ booth faces a checkerboard dance floor.",
+    ),
+  ]),
+  venue("archive", "The Archive", "#9955ff", "MYSQL", 70, -26, 25, "slab", [
+    floor(
+      "Memory hall",
+      "archive",
+      "Tall violet data columns surround a sunken reading island.",
+    ),
+    floor(
+      "Cold storage",
+      "servers",
+      "Glass server vaults flank a clear central service aisle.",
+    ),
+  ]),
+  venue("teahouse", "Cloud Tea", "#82f428", "TELNET", -70, 18, 13, "terrace", [
+    floor(
+      "Tea pavilion",
+      "tea",
+      "Low green tables sit between curved screens and a pebble garden.",
+    ),
+    floor(
+      "Rain garden",
+      "zen",
+      "Bamboo islands and stepping stones cross a shallow reflecting pool.",
+    ),
+  ]),
+  venue("gardens", "Cache Gardens", "#19e6aa", "REDIS", 42, 52, 16, "terrace", [
+    floor(
+      "Hydroponic lab",
+      "hydroponics",
+      "Grow towers and pink lamps feed rows of seedlings.",
+    ),
+    floor(
+      "Citrus terrace",
+      "orchard",
+      "Fruit trees, a seed library and a potting station fill the open roof.",
+    ),
+  ]),
+  venue(
+    "ramen",
+    "Midnight Ramen",
+    "#ff5c26",
+    "TELNET",
+    -42,
+    -26,
+    11,
+    "sawtooth",
+    [
+      floor(
+        "Noodle circuit",
+        "ramen",
+        "A U-shaped orange counter wraps around the open broth kitchen.",
+      ),
     ],
-  },
-  {
-    id: "cafe",
-    name: "Honey Café",
-    japanese: "蜂蜜喫茶",
-    color: "#e9ae3e",
-    protocol: "SSH",
-    position: [-2.5, 0, -18],
-    floors: [
-      {
-        name: "Coffee bar",
-        style: "cafe",
-        description: "Coffee, honey toast, and a window seat.",
-      },
-      {
-        name: "Upstairs studio",
-        style: "library",
-        description: "A shared table for people who stay a little longer.",
-      },
+  ),
+  venue("books", "Corner Books", "#257aff", "MYSQL", -14, 18, 14, "slab", [
+    floor(
+      "Book maze",
+      "books",
+      "Blue shelves form little reading alcoves around a clear walking loop.",
+    ),
+  ]),
+  venue("arcade", "Pixel Palace", "#fb42f5", "HTTP", -14, 52, 18, "portal", [
+    floor(
+      "Arcade floor",
+      "arcade",
+      "Racing cabinets and rhythm machines face a glowing dance platform.",
+    ),
+    floor(
+      "Tournament arena",
+      "esports",
+      "Two teams of terminals face each other across the arena.",
+    ),
+  ]),
+  venue("robotics", "Bot Works", "#ff7035", "SSH", 70, -58, 25, "sawtooth", [
+    floor(
+      "Assembly line",
+      "assembly",
+      "Orange robot arms assemble little courier bots along the conveyor.",
+    ),
+    floor(
+      "Bot nursery",
+      "robotlab",
+      "Charging nests and a test track give new robots room to learn.",
+    ),
+  ]),
+  venue("aquarium", "Blue Current", "#00bfff", "REDIS", 70, 18, 20, "round", [
+    floor(
+      "Ocean gallery",
+      "aquarium",
+      "An enormous blue cylindrical tank rises above coral display pools.",
+    ),
+    floor(
+      "Marine lab",
+      "oceanlab",
+      "Sample tanks and microscopes overlook the water below.",
+    ),
+  ]),
+  venue("transit", "Maglev Central", "#00d9ff", "HTTP", -70, 52, 14, "portal", [
+    floor(
+      "Concourse",
+      "concourse",
+      "Ticket gates, route boards and platform seating connect the city.",
+    ),
+    floor(
+      "Dispatch gallery",
+      "dispatch",
+      "An illuminated route map stretches behind the dispatch consoles.",
+    ),
+  ]),
+  venue("cinema", "Afterglow Cinema", "#ff3c69", "HTTP", -42, 52, 18, "slab", [
+    floor(
+      "Screen one",
+      "cinema",
+      "Rows of red seats face a huge widescreen city film.",
+    ),
+    floor(
+      "Projection booth",
+      "projection",
+      "Projectors and film reels share a balcony above the screen.",
+    ),
+  ]),
+  venue("fashion", "Prism House", "#fd38a5", "MYSQL", 42, 18, 20, "slab", [
+    floor(
+      "Runway",
+      "runway",
+      "A pink runway cuts between sculptural clothing displays.",
+    ),
+    floor(
+      "Wardrobe lab",
+      "wardrobe",
+      "Fabric rolls, fitting pods and sewing stations fill the upper floor.",
+    ),
+  ]),
+  venue("studio", "Maker Station", "#ffd320", "SSH", 14, 52, 15, "sawtooth", [
+    floor(
+      "Fabrication hall",
+      "fabrication",
+      "Laser cutters and enclosed printers surround the shared workbench.",
+    ),
+    floor(
+      "Print room",
+      "print",
+      "Bright posters dry beside a screen-printing press.",
+    ),
+  ]),
+  venue("clinic", "Pulse Clinic", "#3dffcf", "REDIS", 70, 52, 17, "round", [
+    floor(
+      "Scan lounge",
+      "clinic",
+      "White scanning arches and mint treatment pods line the room.",
+    ),
+    floor(
+      "Recovery garden",
+      "recovery",
+      "Quiet recliners face a wall of plants and the daylight panels.",
+    ),
+  ]),
+  venue(
+    "observatory",
+    "Orbit Observatory",
+    "#a675ff",
+    "MYSQL",
+    -42,
+    -58,
+    33,
+    "round",
+    [
+      floor(
+        "Planetarium",
+        "planetarium",
+        "A glowing solar system hangs over the circular planetarium.",
+      ),
+      floor(
+        "Telescope deck",
+        "telescope",
+        "A huge telescope points through the open roof.",
+      ),
     ],
-  },
-  {
-    id: "hotel",
-    name: "Web Hotel",
-    japanese: "ウェブホテル",
-    color: "#35b8a2",
-    protocol: "HTTP",
-    position: [23, 0, -18],
-    floors: [
-      {
-        name: "Lobby",
-        style: "lobby",
-        description: "The hotel has a room for every new connection.",
-      },
-      {
-        name: "Roof lounge",
-        style: "rooftop",
-        description: "Garden chairs, citrus trees, and the hotel radio.",
-      },
+  ),
+  venue("skyport", "Skyport 8", "#28c5ff", "HTTP", -70, -58, 31, "portal", [
+    floor(
+      "Courier hangar",
+      "hangar",
+      "A winged courier craft rests on the illuminated landing pad.",
+    ),
+    floor(
+      "Flight lounge",
+      "flight",
+      "Departure boards and departure pods face the launch windows.",
+    ),
+  ]),
+  venue("gym", "Vector Club", "#beff29", "SSH", -70, -26, 17, "slab", [
+    floor(
+      "Movement studio",
+      "gym",
+      "Punch bags, climbing grips and training rigs leave a long open lane.",
+    ),
+    floor(
+      "Sprint deck",
+      "track",
+      "A striped running circuit surrounds the stretching deck.",
+    ),
+  ]),
+  venue(
+    "market",
+    "Circuit Market",
+    "#ffbd30",
+    "TELNET",
+    -42,
+    18,
+    12,
+    "sawtooth",
+    [
+      floor(
+        "Night market",
+        "market",
+        "Four different food stalls surround a central shared table.",
+      ),
+      floor(
+        "Test kitchen",
+        "kitchen",
+        "Steel cooking islands and bright ingredient trays invite experiments.",
+      ),
     ],
-  },
-  {
-    id: "records",
-    name: "Side A Records",
-    japanese: "レコード",
-    color: "#ee709b",
-    protocol: "HTTP",
-    position: [49, 0, -19],
-    floors: [
-      {
-        name: "Record shop",
-        style: "records",
-        description: "Used records downstairs. Ask Jun for a recommendation.",
-      },
-      {
-        name: "Listening room",
-        style: "records",
-        description: "Pull up a chair and put a record on.",
-      },
+  ),
+  venue(
+    "apartments",
+    "Chromatic Lofts",
+    "#6591ff",
+    "MYSQL",
+    42,
+    -58,
+    37,
+    "terrace",
+    [
+      floor(
+        "Open apartment",
+        "apartment",
+        "A blue living pod, compact kitchen and sleeping loft make a home.",
+      ),
+      floor(
+        "Residents' commons",
+        "common",
+        "A game table, parcel lockers and shared lounge connect the neighbors.",
+      ),
     ],
-  },
-  {
-    id: "archive",
-    name: "The Archive",
-    japanese: "記録館",
-    color: "#ac81dc",
-    protocol: "MYSQL",
-    position: [49, 0, 20],
-    floors: [
-      {
-        name: "Reading room",
-        style: "library",
-        description: "Connection logs sit beside the neighborhood's books.",
-      },
-      {
-        name: "Stacks",
-        style: "control",
-        description: "Rows of records, filed by arrival.",
-      },
-    ],
-  },
-  {
-    id: "teahouse",
-    name: "Old Town Tea",
-    japanese: "お茶",
-    color: "#c88b72",
-    protocol: "TELNET",
-    position: [-58, 0, 17],
-    floors: [
-      {
-        name: "Tea room",
-        style: "tea",
-        description: "Tea is served at the low tables beside the garden.",
-      },
-      {
-        name: "Garden room",
-        style: "garden",
-        description: "A small greenhouse behind the old wooden doors.",
-      },
-    ],
-  },
-  {
-    id: "gardens",
-    name: "Cache House",
-    japanese: "庭園",
-    color: "#49b6dc",
-    protocol: "REDIS",
-    position: [23, 0, 22],
-    floors: [
-      {
-        name: "Greenhouse",
-        style: "garden",
-        description: "Cuttings, seed trays, and a very busy potting bench.",
-      },
-      {
-        name: "Roof garden",
-        style: "rooftop",
-        description: "Plants follow the sun across the roof.",
-      },
-    ],
-  },
-  {
-    id: "ramen",
-    name: "Midnight Ramen",
-    japanese: "ラーメン",
-    color: "#df805e",
-    protocol: "TELNET",
-    position: [-60, 0, -17],
-    floors: [
-      {
-        name: "Noodle bar",
-        style: "ramen",
-        description: "The last bowl is served when the tram stops running.",
-      },
-    ],
-  },
-  {
-    id: "books",
-    name: "Corner Books",
-    japanese: "本屋",
-    color: "#859eac",
-    protocol: "MYSQL",
-    position: [-26, 0, 22],
-    floors: [
-      {
-        name: "Bookshop",
-        style: "library",
-        description: "Secondhand books and a table for reading.",
-      },
-    ],
-  },
+  ),
+  venue("energy", "Solar Exchange", "#ffdf35", "REDIS", 14, -58, 39, "spire", [
+    floor(
+      "Reactor gallery",
+      "reactor",
+      "A glowing power core sits inside a ring of yellow containment fins.",
+    ),
+    floor(
+      "Battery library",
+      "battery",
+      "Color-coded battery cells line the walls beside the energy desk.",
+    ),
+  ]),
+  venue("gallery", "Light Museum", "#ff779e", "MYSQL", 14, 18, 13, "round", [
+    floor(
+      "Light gallery",
+      "gallery",
+      "Floating color sculptures and a tunnel of light fill an open gallery.",
+    ),
+  ]),
 ];
+// Footprints vary by use; all volumes still map to exactly one entrance.
+const footprints: Partial<Record<BuildingId, [number, number]>> = {
+  cafe: [16, 17],
+  teahouse: [17, 17],
+  ramen: [18, 17],
+  books: [15, 19],
+  gardens: [22, 22],
+  robotics: [22, 22],
+  archive: [18, 23],
+  hotel: [21, 22],
+  gallery: [16, 17],
+  observatory: [20, 23],
+  skyport: [23, 23],
+  transit: [23, 20],
+  market: [23, 21],
+  cinema: [22, 23],
+  apartments: [20, 23],
+  energy: [17, 20],
+};
+for (const b of buildings) {
+  const size = footprints[b.id];
+  if (size) {
+    b.exterior.width = size[0];
+    b.exterior.depth = size[1];
+  }
+}
+
 export interface Resident {
   id: string;
   name: string;
@@ -282,7 +540,7 @@ export const residents: Resident[] = [
     home: "hotel",
     look: 6,
     greeting:
-      "Welcome to the Web Hotel. The roof lounge is open, and the lift works today.",
+      "Welcome to the Web Hotel. The infinity lounge is upstairs. Take the stairs on the right.",
     phrase: "There's room upstairs.",
   },
   {
@@ -312,7 +570,7 @@ export const residents: Resident[] = [
     home: "tower",
     look: 9,
     greeting:
-      "Upstairs is the control room. All the terminals here run on demo activity for now.",
+      "City command is upstairs. All the terminals here run on demo activity for now.",
     phrase: "Someone at the door.",
   },
   {
@@ -336,6 +594,109 @@ export const residents: Resident[] = [
     phrase: "Just passing through.",
   },
 ];
+const newHosts: [BuildingId, string, string, string][] = [
+  [
+    "arcade",
+    "Zed",
+    "Arcade host",
+    "The rhythm pad is free. My high score isn't.",
+  ],
+  [
+    "robotics",
+    "Bolt",
+    "Robot engineer",
+    "The little orange bots deliver parcels. This one keeps stealing my screwdriver.",
+  ],
+  [
+    "aquarium",
+    "Coral",
+    "Marine keeper",
+    "Watch the blue tank. The fish take turns leading the school.",
+  ],
+  [
+    "transit",
+    "Rail",
+    "Transit guide",
+    "The maglev loops around the city. Dispatch is upstairs.",
+  ],
+  [
+    "cinema",
+    "Flick",
+    "Projectionist",
+    "Today's film is a slow ride over the rooftops. The best seat is in the middle.",
+  ],
+  [
+    "fashion",
+    "Prism",
+    "Clothing designer",
+    "Every jacket here is a color experiment. Try the pink one.",
+  ],
+  [
+    "studio",
+    "Chip",
+    "Fabricator",
+    "We print spare parts downstairs and posters upstairs.",
+  ],
+  [
+    "clinic",
+    "Pulse",
+    "Care bot",
+    "The scan is just a light show today. Take a seat and catch your breath.",
+  ],
+  [
+    "observatory",
+    "Nova",
+    "Astronomer",
+    "The planets aren't to scale. You'd be walking for years.",
+  ],
+  [
+    "skyport",
+    "Aero",
+    "Courier pilot",
+    "The wings fold in for landing. Keep clear of the yellow pad.",
+  ],
+  [
+    "gym",
+    "Dash",
+    "Movement coach",
+    "Leave the weights for a minute. Take a lap upstairs.",
+  ],
+  [
+    "market",
+    "Pep",
+    "Market cook",
+    "Pick a stall. I recommend the orange dumplings.",
+  ],
+  [
+    "apartments",
+    "Hue",
+    "Loft resident",
+    "Come in. The parcel lockers are upstairs, and someone left a game running.",
+  ],
+  [
+    "energy",
+    "Lux",
+    "Energy keeper",
+    "The core charges the street lamps. They switch on at sunset.",
+  ],
+  [
+    "gallery",
+    "Ray",
+    "Light artist",
+    "Walk through the light tunnel. The colors change as you turn.",
+  ],
+];
+newHosts.forEach(([home, name, role, greeting], i) =>
+  residents.push({
+    id: home + "-host",
+    name,
+    role,
+    home,
+    look: i + 12,
+    greeting,
+    phrase: ["Come on in.", "Take a look upstairs.", "Hello, traveler."][i % 3],
+  }),
+);
 export function residentById(id: string): Resident {
   const known = residents.find((r) => r.id === id);
   if (known) return known;
@@ -381,9 +742,9 @@ export function roomResidents(room: RoomLocation): Resident[] {
     buildings.findIndex((b) => b.id === room.building) + room.floor * 3;
   return [
     primary,
-    residents[(start + 4) % 12],
-    residents[(start + 7) % 12],
-    residents[(start + 10) % 12],
+    residents[(start + 4) % residents.length],
+    residents[(start + 7) % residents.length],
+    residents[(start + 10) % residents.length],
   ].filter((r, i, a) => a.findIndex((o) => o.id === r.id) === i);
 }
 export function replyTo(
@@ -396,9 +757,9 @@ export function replyTo(
   if (topic === "activity")
     return `Around here, ${b.protocol} visitors head to ${b.name}. The activity feed shows their addresses and requests. These are demo sessions until the honeypot is connected.`;
   return [
-    "Take a look upstairs in Honey Tower. Kai keeps the terminal room open.",
+    "Take a look upstairs in Honey Tower. Kai keeps city command open.",
     "Jun lets you put a record on at Side A. Start with the turntable.",
-    "Old Town Tea has a garden room. Nori will show you the way.",
-    "Sora's greenhouse is over in Cache House. Don't forget to water the plants.",
+    "Cloud Tea has a garden room. Nori will show you the way.",
+    "Sora's hydroponic lab is over in Cache Gardens. Don't forget to water the plants.",
   ][resident.look % 4];
 }

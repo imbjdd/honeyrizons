@@ -30,35 +30,66 @@ export function useReducedMotion() {
   return reduced;
 }
 
-export type ThemeMode = Theme | "clock";
-export function useCityTheme() {
+export type ThemeMode = Theme | "clock" | "cycle";
+/** Six minutes per city day. Elapsed time, rather than timer count, drives the clock. */
+export function useCityTheme(stopped: boolean) {
   const [mode, setMode] = useState<ThemeMode>(() => {
     try {
       const saved = localStorage.getItem("honeyrizons.theme");
-      return saved === "night" || saved === "clock" ? saved : "day";
+      return saved === "day" || saved === "night" || saved === "clock"
+        ? saved
+        : "cycle";
     } catch {
-      return "day";
+      return "cycle";
     }
   });
-  const [hour, setHour] = useState(() => new Date().getHours());
+  const [phase, setPhase] = useState(10 / 24);
+  const [clockPhase, setClockPhase] = useState(() => {
+    const now = new Date();
+    return (now.getHours() + now.getMinutes() / 60) / 24;
+  });
   useEffect(() => {
-    const timer = window.setInterval(
-      () => setHour(new Date().getHours()),
-      60_000,
-    );
+    if (stopped || mode !== "cycle") return;
+    let last = performance.now();
+    const timer = window.setInterval(() => {
+      const now = performance.now();
+      // Freeze while the page is hidden, just like walking and traffic.
+      if (!document.hidden)
+        setPhase(
+          (previous) => (previous + Math.min((now - last) / 1000, 2) / 360) % 1,
+        );
+      last = now;
+    }, 1000);
+    return () => window.clearInterval(timer);
+  }, [mode, stopped]);
+  useEffect(() => {
+    const timer = window.setInterval(() => {
+      const now = new Date();
+      setClockPhase((now.getHours() + now.getMinutes() / 60) / 24);
+    }, 60000);
     return () => window.clearInterval(timer);
   }, []);
+  const dayPhase =
+    mode === "cycle"
+      ? phase
+      : mode === "clock"
+        ? clockPhase
+        : mode === "day"
+          ? 0.5
+          : 0;
   const theme: Theme =
-    mode === "clock" ? (hour >= 19 || hour < 7 ? "night" : "day") : mode;
+    dayPhase >= 7 / 24 && dayPhase < 19 / 24 ? "day" : "night";
+  const minutes = Math.floor(dayPhase * 1440);
+  const cityTime = `${String(Math.floor(minutes / 60)).padStart(2, "0")}:${String(minutes % 60).padStart(2, "0")}`;
   function selectMode(next: ThemeMode) {
     setMode(next);
     try {
       localStorage.setItem("honeyrizons.theme", next);
     } catch {
-      /* Theme still works with storage disabled. */
+      /* Storage is optional. */
     }
   }
-  return { theme, mode, selectMode };
+  return { theme, mode, dayPhase, cityTime, selectMode };
 }
 
 export function useCitySound() {

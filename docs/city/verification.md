@@ -1,38 +1,32 @@
 # Frontend verification
 
-Checked in the T3 Code collaborative browser on October 10, 2026, using the production build on port 5174. The reference was inspected in the same browser, including a resident, its conversation and transaction views, the MEMPOOL shop, a shopkeeper, an indoor display, place controls and the exit.
+Checked in the T3 Code collaborative browser on October 10, 2026. The revised production build ran on port 5174. Earlier reference research covered ZStreet's residents, conversations, first-person shops, indoor objects and exits.
 
-## Build and regression checks
+## Build and scope
 
-- Frontend production build and repository typechecks pass.
-- The five walking tests pass with 19 assertions. They cover furniture and wall collision, sliding, three-floor stairs in both directions, stairwell boundaries, frame-rate-independent movement, diagonal speed, pitch limits and the ground-floor exit.
-- Frozen dependency installation and whitespace checks pass.
-- The latest upstream dashboard and attack globe are preserved at /dashboard. The dashboard source matches origin/main at eb5d7cf. Its stylesheet and fonts load only on that route.
-- The city route makes no API or SSE requests. The globe module is a separate lazy chunk. Vite still warns about large chunks.
+- Production frontend build and repository typechecks pass.
+- Five walking tests pass with 19 assertions, covering collision, sliding, alternating stairs, stairwell boundaries, movement timing, diagonal speed, pitch and exits.
+- Whitespace checks pass.
+- The city makes zero fetch, XHR or EventSource requests. Geometry, sprites, fonts and demo data are local.
+- The upstream dashboard and attack globe load their offline view at `/dashboard`, with one dashboard stylesheet. Vite still reports the existing large Three.js and globe chunks.
 
-## City checks
+## City and rooms
 
-The outdoor city renders locally authored buildings, road markings, signs, trees, pixel residents, traffic and a tram. Resident selection, follow, shop entrances, day/night, camera controls, district navigation, pause, activity filtering, sound and filtered photo export were checked across the development passes.
+- All 24 exterior building picks have unique catalog IDs. An actual canvas click on Pulse Clinic opened its matching room.
+- All 46 floors rendered with perspective cameras, clear player spawn points and different canvas hashes. Each floor has its own authored layout.
+- Resident placement checks found no characters inside furniture. Floors have three or four clickable residents.
+- All 22 stair flights passed in both directions against the actual room collision plans, totaling 44 routes.
+- Held W and Shift input climbed Honey Tower's first flight, reached height 4.8 and changed the room floor to 1. The recorded walkthrough also uses held walking actions.
+- Floor shortcuts retain the same interior instance, so changing floor does not rebuild the entire building.
+- All 183 room resident shortcuts faced the expected character after the camera positioning fix.
+- Pulse's profile and conversation opened through the UI. The care bot has a matching pixel portrait and scene sprite. Conversation replies use authored local data; player movement blocks while the panel is open.
+- Moving planets, fish, sculptures, traffic and residents render in the revised world. Day and night produce different sky, lighting and emissive-window states.
+- The automatic city clock advances. Pause freezes its phase. Reduced motion and hidden-tab handling also stop the automatic clock in code.
 
-Shop entrances now enter the building directly. Apartment picks open an information card. The shop directory and Places menu provide keyboard access. Street regulars and named residents use the same pixel artwork as their profile portraits.
+## Responsive and captures
 
-## First-person rooms
+At 390 by 844, the aquarium room has no horizontal overflow, and all four walking buttons fit on screen. Desktop captures use 1280 by 800. The new walkthrough was recorded at 960 by 600 and compressed for the repository.
 
-- All nine buildings and 17 floors render with a perspective camera. Every floor produced a different canvas image.
-- All 61 room resident entries opened the expected profile.
-- Actual held keyboard input walked across the café and climbed and descended its stairs. The floor label updated on the landing. The recorded walkthrough uses held walking inputs too.
-- All 16 ascending and descending stair routes passed against the actual building collision plans, including Honey Tower's third floor. This route sweep drove the navigation controller directly in the browser.
-- E opened Mika's profile from the crosshair. Conversation choices returned the authored replies. Movement remained blocked while the inspector was open.
-- Residents moved in their aisles. The selected resident held position during a conversation. Pause stopped their movement and sprite animation.
-- The touch movement callbacks moved the player and released on pointer-up. Blur released held walking input. Pointer cancellation also clears input.
-- Walking through the ground-floor doorway exited the room. Return to the street and Escape restored the outdoor camera. Floor-menu shortcuts were checked throughout the room sweep.
-- Coffee, lift and shop actions were checked during the earlier exploration pass. The final version replaces the lift with physical stairs. The turntable, coffee and watering actions remain local demos.
-- Final browser checks recorded no application errors.
+Saved captures cover the daytime and nighttime city, the domed planetarium, Honey Tower's stairs, Pulse's conversation and the phone aquarium. Browser snapshots reported no application errors during the final checks.
 
-## Responsive and motion checks
-
-The city layout was checked at phone, tablet and desktop sizes during the first pass. The first-person phone layout was checked at 390 by 844, including the movement pad, room header and resident shortcuts, with no horizontal overflow. The floor menu hides the roster while expanded to keep its destinations clear.
-
-Reduced-motion behavior and context-loss handling were inspected in code. Reduced motion disables automatic movement and events while preserving manual walking and looking. Mouse-look pitch is bounded, movement has no head bob, and open panels release held input. The context-loss screen offers Reload.
-
-The collaborative browser briefly throttled background frames and failed some captures. Focusing the preview restored a 120 Hz animation callback cadence. This is a local observation, not a cross-device performance guarantee. Screenshots and the short walkthrough were saved after the preview recovered.
+Earlier passes also checked doorway exits, Escape, touch release, blur, pointer cancellation, coffee, watering, records, activity filtering and photo export. Those controls remain in this revision. Cross-device frame rates have not been benchmarked.

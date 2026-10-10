@@ -16,6 +16,7 @@ import {
   ChevronDown,
   ChevronRight,
   Clock3,
+  Orbit,
   Compass,
   Download,
   Expand,
@@ -80,7 +81,7 @@ const dataViews: {
     id: "city",
     title: "City",
     japanese: "街",
-    description: "Show shops, residents, and traffic.",
+    description: "Show buildings, residents, and traffic.",
   },
   {
     id: "protocols",
@@ -231,9 +232,11 @@ function ActivityItem({
 
 export default function CityApp() {
   const city = useRef<CityHandle | null>(null);
-  const { theme, mode, selectMode } = useCityTheme();
   const reducedMotion = useReducedMotion();
   const [paused, setPaused] = useState(false);
+  const { theme, mode, dayPhase, cityTime, selectMode } = useCityTheme(
+    paused || reducedMotion,
+  );
   const { events, total } = useDemoCity(paused || reducedMotion);
   const { enabled: sound, toggle: toggleSound } = useCitySound();
   const [ready, setReady] = useState(false);
@@ -286,6 +289,7 @@ export default function CityApp() {
   const options = useMemo(
     () => ({
       theme,
+      dayPhase,
       paused,
       view,
       reducedMotion,
@@ -303,6 +307,7 @@ export default function CityApp() {
     }),
     [
       theme,
+      dayPhase,
       paused,
       view,
       reducedMotion,
@@ -442,7 +447,7 @@ export default function CityApp() {
           <div className="loader-line">
             <i />
           </div>
-          <small>Loading the street and its shops.</small>
+          <small>Loading the city.</small>
         </div>
       )}
       {error && (
@@ -471,9 +476,7 @@ export default function CityApp() {
               <span className="wordmark">
                 Honeyrizons<span className="brand-period">.</span>
               </span>
-              <span className="brand-tagline">
-                Click a person. Step inside a shop.
-              </span>
+              <span className="brand-tagline">A city to get lost in.</span>
             </span>
           </button>
           <span className="demo-badge">
@@ -531,6 +534,13 @@ export default function CityApp() {
               shortcut="N"
             >
               <Moon size={16} />
+            </ToolButton>
+            <ToolButton
+              label="Automatic day cycle"
+              onClick={() => selectMode("cycle")}
+              active={mode === "cycle"}
+            >
+              <Orbit size={17} />
             </ToolButton>
             <ToolButton
               label="Follow my clock"
@@ -751,7 +761,7 @@ export default function CityApp() {
         <div className="world-hint">
           <span>Drag to move</span>
           <i />
-          <span>Click a person or a shop</span>
+          <span>Click a person or a building</span>
         </div>
         <button
           className="activity-inbox glass"
@@ -775,9 +785,13 @@ export default function CityApp() {
           <span>{events[0].action}</span>
         </div>
         <div className="city-coordinates" aria-hidden="true">
-          HNY / 48°51′ N 2°21′ E{" "}
+          HNY / 2086 / {cityTime}{" "}
           <span>
-            {theme === "day" ? "Shops are open." : "Last tram at midnight."}
+            {mode === "cycle"
+              ? "City day / 6 min"
+              : mode === "clock"
+                ? "Your local time"
+                : "Fixed time"}
           </span>
         </div>
       </div>
@@ -978,9 +992,9 @@ export default function CityApp() {
             {panel === "places" && (
               <>
                 <p className="panel-intro">
-                  Open a shop or move to a district.
+                  Every building is open. Choose a place or explore a district.
                 </p>
-                <div className="panel-section-title">Open shops</div>
+                <div className="panel-section-title">Explore buildings</div>
                 <div className="places-list">
                   {buildings.map((b) => (
                     <button
@@ -1138,8 +1152,8 @@ export default function CityApp() {
                     <span>
                       <b>Meet the neighbors</b>
                       <small>
-                        Click a person to talk or follow. Click a shop to step
-                        inside.
+                        Click a person to talk or follow. Click a building to
+                        step inside.
                       </small>
                     </span>
                   </div>
@@ -1194,8 +1208,8 @@ export default function CityApp() {
                 </div>
                 <h3 className="about-title">Explore Honeyrizons</h3>
                 <p className="about-copy">
-                  Nine shops are open. Click a storefront to enter, take the
-                  lift upstairs, or talk to the people inside.
+                  All 24 buildings are open. Step inside, walk upstairs, or talk
+                  to the people inside. The city day changes as you explore.
                 </p>
                 <p className="about-copy">
                   Honeyrizons turns honeypot activity into a place you can

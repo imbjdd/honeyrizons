@@ -57,7 +57,7 @@ export class CityScene implements CityHandle {
     }),
   );
   private recordPlaying = false;
-  private camera = new THREE.OrthographicCamera(-50, 50, 35, -35, 0.1, 500);
+  private camera = new THREE.OrthographicCamera(-70, 70, 50, -50, 0.1, 500);
   private renderer: THREE.WebGLRenderer;
   private controls: OrbitControls;
   private world: CityWorld;
@@ -96,10 +96,10 @@ export class CityScene implements CityHandle {
     this.renderer.shadowMap.type = THREE.PCFShadowMap;
     this.renderer.toneMapping = THREE.NeutralToneMapping;
     this.renderer.toneMappingExposure = 1.15;
-    this.camera.position.set(78, 80, 104);
-    this.camera.lookAt(-3, 9, -2);
+    this.camera.position.set(106, 113, 135);
+    this.camera.lookAt(0, 11, 0);
     this.controls = new OrbitControls(this.camera, canvas);
-    this.controls.target.set(-3, 9, -2);
+    this.controls.target.set(0, 11, 0);
     this.controls.enableDamping = true;
     this.controls.dampingFactor = 0.08;
     this.controls.rotateSpeed = 0.45;
@@ -169,24 +169,9 @@ export class CityScene implements CityHandle {
     const changed = this.options.theme !== options.theme;
     this.options = options;
     this.dirty = true;
-    const night = options.theme === "night";
-    this.scene.background = new THREE.Color(night ? "#182c43" : "#c8dde1");
-    (this.scene.fog as THREE.Fog).color.copy(this.scene.background);
-    this.ambient.color.set(night ? "#9cb1e5" : "#e8eff4");
-    this.ambient.groundColor.set(night ? "#666d8c" : "#a99a79");
-    this.ambient.intensity = night ? 0.95 : 1.5;
-    this.sun.color.set(night ? "#b3c5ea" : "#fff1d5");
-    this.sun.intensity = night ? 0.55 : 2.2;
-    this.renderer.toneMappingExposure = night ? 1.2 : 1.08;
-    [this.world.geometry, ...(this.interior?.geometries ?? [])].forEach((geo) =>
-      geo.windows.forEach((m) => {
-        m.emissiveIntensity = night ? 0.8 : 0.09;
-      }),
+    this.applyDaylight(
+      this.displayedPhase < 0 ? options.dayPhase : this.displayedPhase,
     );
-    this.world.nightLights.forEach((light) => {
-      light.intensity = night ? 18 : 0;
-    });
-    this.world.nightProps.visible = night;
     this.world.overlays.forEach((overlay) => {
       overlay.visible =
         options.view === "protocols" || options.view === "threats";
@@ -201,17 +186,57 @@ export class CityScene implements CityHandle {
       if (!this.walker.enabled && document.pointerLockElement === this.canvas)
         void document.exitPointerLock();
     }
-    if (this.interior) {
-      this.ambient.color.set(night ? "#becdf6" : "#f3fbff");
-      this.ambient.groundColor.set(night ? "#99a3b5" : "#d8e1df");
-      this.ambient.intensity = night ? 1.6 : 2.2;
-      this.sun.intensity = night ? 1.1 : 2.1;
-    }
     this.world.bubbles.forEach(
       ({ bubble }) => (bubble.visible = options.view !== "traffic"),
     );
     if (options.reducedMotion) this.touring = false;
     if (changed) this.renderer.shadowMap.needsUpdate = true;
+  }
+
+  private displayedPhase = -1;
+  private applyDaylight(phase: number) {
+    const angle = (phase - 0.25) * Math.PI * 2;
+    const elevation = Math.sin(angle);
+    const daylight = THREE.MathUtils.smoothstep(elevation, -0.14, 0.35);
+    const twilight = (1 - Math.abs(daylight * 2 - 1)) * 0.75;
+    const sky = new THREE.Color("#091a3b")
+      .lerp(new THREE.Color("#9bcbe9"), daylight)
+      .lerp(new THREE.Color("#ff9f92"), twilight);
+    this.scene.background = sky;
+    if (this.scene.fog instanceof THREE.Fog) this.scene.fog.color.copy(sky);
+    this.ambient.color
+      .set("#9cb6f5")
+      .lerp(new THREE.Color("#e9f7ff"), daylight);
+    this.ambient.groundColor
+      .set("#3e5389")
+      .lerp(new THREE.Color("#acc8de"), daylight);
+    this.ambient.intensity = this.interior ? 1.8 : 0.65 + daylight * 1.05;
+    this.sun.color
+      .set("#9ec8ff")
+      .lerp(new THREE.Color("#fff5df"), daylight)
+      .lerp(new THREE.Color("#ffad72"), twilight);
+    this.sun.intensity = this.interior
+      ? 1.3 + daylight * 0.7
+      : 0.32 + daylight * 2.35;
+    this.sun.position.set(
+      Math.cos(angle) * 70,
+      25 + Math.max(0, elevation) * 85,
+      45,
+    );
+    this.renderer.toneMappingExposure = 1.02;
+    const darkness = 1 - daylight;
+    [this.world.geometry, ...(this.interior?.geometries ?? [])].forEach((geo) =>
+      geo.windows.forEach((m) => {
+        m.emissiveIntensity = 0.16 + darkness * 1.55;
+      }),
+    );
+    this.world.nightLights.forEach((light) => {
+      light.intensity = darkness * 28;
+    });
+    this.world.nightProps.visible = darkness > 0.12;
+    this.bloom.strength = 0.16 + darkness * 0.23;
+    this.displayedPhase = phase;
+    this.renderer.shadowMap.needsUpdate = true;
   }
 
   zoom(direction: number) {
@@ -236,7 +261,7 @@ export class CityScene implements CityHandle {
     this.touring = false;
     if (this.room) this.exit();
     this.follow(null);
-    this.target = new THREE.Vector3(-3, 9, -2);
+    this.target = new THREE.Vector3(0, 11, 0);
     this.targetZoom = 1;
     this.angle = Math.atan2(85, 104);
   }
@@ -285,6 +310,16 @@ export class CityScene implements CityHandle {
       0,
       definition.floors.length - 1,
     );
+    if (this.room?.building === building && this.walker) {
+      this.room.floor = safeFloor;
+      this.walker.spawn(safeFloor);
+      this.selectedResident = null;
+      this.options.onInspect(null);
+      this.options.onRoomChange({ ...this.room });
+      this.dirty = true;
+      this.canvas.focus({ preventScroll: true });
+      return;
+    }
     if (!this.room)
       this.streetCamera = {
         position: this.camera.position.clone(),
@@ -410,10 +445,12 @@ export class CityScene implements CityHandle {
         }
       }
       this.walker.navigation.yaw = Math.atan2(
-        this.walker.camera.position.x - position.x,
-        this.walker.camera.position.z - position.z,
+        this.walker.navigation.position.x - position.x,
+        this.walker.navigation.position.z - position.z,
       );
+      this.walker.navigation.pitch = 0;
       this.walker.release();
+      this.walker.update(0);
     }
     if (person && !this.interior) {
       this.target = person.sprite.position
@@ -676,8 +713,8 @@ export class CityScene implements CityHandle {
     const halfHeight = this.room
       ? Math.max(15, 21 / aspect)
       : aspect < 0.8
-        ? 45
-        : 34;
+        ? 48
+        : 74;
     this.camera.left = -halfHeight * aspect;
     this.camera.right = halfHeight * aspect;
     this.camera.top = halfHeight;
@@ -694,6 +731,22 @@ export class CityScene implements CityHandle {
       ? Math.min((time - this.lastTime) / 1000, 0.05)
       : 0;
     this.lastTime = time;
+    const targetPhase = this.options.dayPhase;
+    if (Math.abs(this.displayedPhase - targetPhase) > 0.00001) {
+      const diff =
+        THREE.MathUtils.euclideanModulo(
+          targetPhase - this.displayedPhase + 0.5,
+          1,
+        ) - 0.5;
+      const next = this.options.reducedMotion
+        ? targetPhase
+        : THREE.MathUtils.euclideanModulo(
+            this.displayedPhase + diff * (1 - Math.exp(-dt * 2.5)),
+            1,
+          );
+      this.applyDaylight(next);
+      this.dirty = true;
+    }
     const moving = !this.options.paused && !this.options.reducedMotion;
     if (moving) this.elapsed += dt;
     if (this.walker && this.interior && this.room) {
@@ -848,7 +901,8 @@ export class CityScene implements CityHandle {
   };
 
   private render() {
-    if (this.options.theme === "night") this.composer.render();
+    if (Math.sin((this.displayedPhase - 0.25) * Math.PI * 2) < 0.35)
+      this.composer.render();
     else this.renderer.render(this.scene, this.activeCamera);
   }
 

@@ -1,60 +1,34 @@
-# Honeyrizons city
+# Honeyrizons, city 2086
 
-The reference is [ZStreet](https://zstreet.cash/), inspected on October 10, 2026. Its defining element is an explorable, densely detailed voxel city. The page is the city, with small translucent controls at the edges and a compact data strip at the bottom. Day and night change the world as well as the interface.
+The revised brief calls for a futuristic modern city, an original interior in every building, moving 2D characters in first-person 3D rooms, and a changing day. ZStreet provides the interaction reference. Its architecture is not the target for this revision.
 
 ## Design plan
 
-- Chalk `#f4f3ef`: daytime interface and sidewalks.
-- Asphalt `#687078`: roads and muted text.
-- Honey `#edb84b`: brand, SSH district, active controls.
-- Jade `#6eab93`: HTTP district and vegetation.
-- Coral `#dc8976`: Telnet district and small storefronts.
-- Ink `#161d30`: nighttime sky and interface.
+- Porcelain `#eaf3ff` for architectural shells and daytime controls.
+- Midnight blue `#102444` for glass, roads and nighttime sky.
+- Electric cyan `#00d9ff` for transit, water and glazing.
+- Solar yellow `#ffce24` for Honey Tower and wayfinding.
+- Hot pink `#ff398e` for music, fashion and entertainment.
+- Spring green `#80f428` for planted terraces and growing spaces.
 
-DM Sans is the interface face. DotGothic16 gives the wordmark and district names the pixel character of the world. IBM Plex Mono is used for addresses and values.
-
-The city fills the viewport. Its main avenue runs across the middle of the camera view, with an identifiable honey tower behind it, shopfronts at street level, a planted square, and a railway in the foreground. The top corners hold the brand and environmental controls. A right-side toolbar controls the camera. District navigation stays in the lower-left corner; network totals sit at the bottom center. Detail panels open only when requested.
+DM Sans stays on controls, DotGothic16 on the city wordmark. IBM Plex Mono stays on addresses. The canvas gets the personality: curved glass volumes, offset tower slabs, rooftop rings, planted terraces and an elevated maglev. The controls stay compact and left aligned.
 
 ```
- brand / demo                         photo / day / night / sound
+city / location                         time / day cycle / photo
 
-                 voxel buildings                     camera
-       shops, trees, moving cars and people           controls
-                central honey square
+      glass skyline and elevated transit
+        distinct public buildings, clickable residents
+              avenues and waterfront
 
- district / explore      network totals                  activity
+places / districts             local activity               camera
 ```
 
-## Review against the brief
+There are 24 buildings across four connected blocks. Every architectural volume belongs to the places catalog and opens its own interior. No apartment block routes to a neighboring shop. Large venues have connected floors and stairs. Interior layouts are authored by venue and floor: a robotics assembly line, a cylindrical aquarium, a cinema with tiered seating, an arcade, a fashion runway, a hydroponic lab, a maglev concourse and others. Shared furniture helpers provide construction, not shared room plans.
 
-The source is a 3D world, so a conventional dashboard or landing page would miss the brief. The scene receives most of the detail. There are no decorative charts or cards over the default city view. Honeyrizons replaces the blockchain content with five honeypot protocol districts and clearly labeled demo events. Geometry and textures are authored locally; reference screenshots are research material, not the render layer.
+A six-minute city day moves through noon, sunset and night. Windows and street lamps turn on as daylight fades. Manual day/night and real-clock controls remain available. Pause and reduced motion stop the automatic cycle. Pixel clothing uses fully saturated yellow, pink, cyan, orange, violet and green, with colored sneakers and accessories.
 
-The frontend runs independently of the honeypot. Camera movement, selection, activity search, filters, day/night, sound, photo export, and pause are real interactions. A local demo source is the future integration boundary. The existing dashboard remains available at `/dashboard`.
+## Review before building
 
-## Street and interior pass
+Adding neon trim to the earlier timber city would leave the rejected architecture intact. Replace the exterior generator and every room layout. Glass towers need different silhouettes, not repeated boxes with different signs. Preserve useful controls and working navigation. Give each venue a recognizable object visible from the door so entering two buildings cannot feel like entering the same room.
 
-The second inspection covered a resident's profile, traits and conversation, a carrier's transaction, a storefront entrance, the MEMPOOL pickup hall and its shopkeeper, an indoor display, the place menu and the exit control. ZStreet uses pixel portraits as camera-facing characters in a 3D world. Entering a shop changes the scene; its furniture and people remain clickable.
-
-The first Honeyrizons skyline repeated too many rectangular blocks. This pass uses painted plaster, teal glazing, brass trim, coral roofs and shop-specific signs. The tower gets an Art Deco crown, the hotel a curved corner sign, the record shop a rooftop disc and the café a yellow tiled roof. The street stays the main view.
-
-The paint palette now uses marigold #f7c64f, turquoise #32aaa8, sky blue #67bddd, coral #f49375, rose #ee709b and lilac #ac81dc. Gray roofs and pale stone keep the streets readable. Neutral tone mapping preserves the painted colors. The room palette uses turquoise walls, yellow stairs and pendant lamps, cream tiles and honey-colored wood.
-
-## First-person interiors
-
-Entering a storefront switches from the outdoor orthographic camera to a perspective camera at eye level. Each building contains all of its floors in one 3D scene. Open stairwells and alternating stair flights connect the levels, so walking upstairs has no scene cut. Honey Tower has reception, a control room and a roof terrace. The other multistory shops have upstairs studios, listening rooms or gardens.
-
-The player walks with WASD or ZQSD, looks with a drag or the arrow keys, and interacts with E or a click. Free look can lock the mouse. A four-button pad handles walking on touchscreens. The camera has no head bob. Furniture footprints, walls and reachable stair surfaces constrain movement. The front doorway leads back to the street. A floor menu offers a keyboard shortcut between levels.
-
-Pixel residents move through clear aisles and face the camera. Talking to a resident opens a profile and a choice-based conversation. The resident stops walking during the conversation, and player movement stops while a panel is open. Coffee counters, record players, reading tables and potting benches have local actions or information.
-
-The room HUD is small. A location card and resident shortcuts sit at the left edge, a crosshair marks the center, and a nearby prompt appears near the bottom. The street statistics and camera toolbar disappear indoors. Photo mode hides the room controls too.
-
-    brand / room / floor                          environment
-
-              furnished first-person room
-       moving pixel residents, objects and stairs
-                        crosshair
-
-    walk / look controls            nearby interaction
-
-The city and conversations use local demo data. The existing analytics dashboard, including its attack globe, remains at /dashboard. The city does not make honeypot API requests.
+Use original geometry and sprites. Keep the frontend independent of the honeypot, preserve `/dashboard`, and update PR #1 after browser checks and new day, night and interior captures.

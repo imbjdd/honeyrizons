@@ -1,11 +1,11 @@
 .city-app {
-  --glass: #faf9f2eb;
-  --ink: #414c48;
-  --muted: #7f8981;
-  --faint: #a5aaa0;
-  --line: #626f5026;
-  --honey: #d9a543;
-  --soft: #e8e6da;
+  --glass: #f4f9ffec;
+  --ink: #263e5a;
+  --muted: #657c96;
+  --faint: #9caec3;
+  --line: #406c9226;
+  --honey: #db9e00;
+  --soft: #e0eafb;
   --hover: #b8b8a41a;
   --shadow: 0 3px 16px #34382a0a, 0 1px 3px #34382a08;
   position: relative;
@@ -21,12 +21,12 @@
   -webkit-font-smoothing: antialiased;
 }
 .city-app.theme-night {
-  --glass: #192332eb;
-  --ink: #e2e4dd;
+  --glass: #102748ed;
+  --ink: #edf6ff;
   --muted: #a3afbb;
   --faint: #72818e;
   --line: #b8c4c126;
-  --honey: #e7bd6c;
+  --honey: #ffce24;
   --soft: #303a47;
   --hover: #b8c6d212;
   --shadow: 0 3px 18px #080b1526;
@@ -2627,4 +2627,8 @@
 }
 .in-room:has(.floor-menu[open]) .room-people {
   display: none;
+}
+
+.city-coordinates {
+  font-variant-numeric: tabular-nums;
 }

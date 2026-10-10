@@ -1,17 +1,17 @@
 // Original pixel art, drawn on a 32 × 48 grid. Shared by portraits and world sprites.
 const outfits = [
-  "#e5ad3c",
-  "#cc6a85",
-  "#9a89bc",
-  "#4e91a8",
-  "#73a06b",
-  "#ba7754",
-  "#67ad9b",
-  "#dc7c53",
-  "#8097c4",
-  "#426f85",
-  "#d69bad",
-  "#84abb1",
+  "#ffcc00",
+  "#ff278d",
+  "#a345ff",
+  "#00cbff",
+  "#74ef24",
+  "#ff6320",
+  "#00e6b5",
+  "#ff3155",
+  "#326bff",
+  "#15efff",
+  "#fc4cf1",
+  "#adf52c",
 ];
 const skins = [
   "#edc29a",
@@ -41,8 +41,11 @@ export function characterCanvas(look: number, frame = 0) {
   p(18, 42 + step * 2, 9, 4, "#26323f");
   p(7, 22, 19, 14, "#293944");
   p(8, 23, 17, 11, color);
-  p(8, 31, 17, 3, "#45646d");
-  p(10, 24, 2, 6, "#f6d798");
+  p(8, 31, 17, 3, color);
+  p(10, 24, 2, 6, "#ffffff");
+  p(8, 42 - step * 2, 6, 2, color);
+  p(19, 42 + step * 2, 6, 2, color);
+  p(24, 26, 2, 3, "#ffffff");
   p(4, 24, 4, 10, "#293944");
   p(5, 25, 3, 6, color);
   p(4, 31, 4, 4, skin);
@@ -64,14 +67,14 @@ export function characterCanvas(look: number, frame = 0) {
   if (look % 3 === 0) {
     p(6, 5, 21, 5, color);
     p(9, 2, 15, 5, color);
-    p(20, 8, 10, 2, "#f5d06c");
+    p(20, 8, 10, 2, "#ffffff");
   }
   if (look % 4 === 1) {
     p(11, 11, 7, 5, "#293944");
     p(19, 11, 7, 5, "#293944");
     p(18, 12, 2, 1, "#293944");
-    p(12, 12, 4, 2, "#719aaf");
-    p(20, 12, 4, 2, "#719aaf");
+    p(12, 12, 4, 2, "#00eaff");
+    p(20, 12, 4, 2, "#00eaff");
   }
   if (look % 4 === 2) {
     p(12, 24, 10, 9, "#f5e5bd");
@@ -86,6 +89,22 @@ export function characterCanvas(look: number, frame = 0) {
     p(23, 30, 7, 10, "#e4bd72");
     p(24, 32, 5, 1, "#8c5c47");
     p(24, 35, 5, 1, "#8c5c47");
+  }
+  // Service bots use the same two-frame body rig, with a faceplate and antenna.
+  if ([13, 15, 19, 25].includes(look)) {
+    p(6, 5, 21, 17, "#20364d");
+    p(7, 6, 19, 15, "#e6f5ff");
+    p(9, 10, 15, 8, "#183656");
+    p(11, 12, 4, 3, "#00edff");
+    p(19, 12, 4, 3, "#00edff");
+    p(14, 19, 7, 1, color);
+    p(15, 2, 3, 4, "#e6f5ff");
+    p(14, 1, 5, 2, color);
+    p(4, 11, 3, 6, color);
+    p(26, 11, 3, 6, color);
+    p(11, 21, 11, 3, "#e6f5ff");
+    p(4, 31, 4, 4, "#e6f5ff");
+    p(25, 31, 4, 4, "#e6f5ff");
   }
   return canvas;
 }

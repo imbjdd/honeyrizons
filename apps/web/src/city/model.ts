@@ -24,8 +24,8 @@ export const districts: District[] = [
     id: "SSH",
     name: "Honey square",
     japanese: "ハニー広場",
-    color: "#edb84b",
-    position: [-15, 0, -19],
+    color: "#ffce24",
+    position: [-14, 0, -26],
     description:
       "The heart of the city. Every shell session finds its way to Honey Tower.",
     port: 2222,
@@ -34,28 +34,28 @@ export const districts: District[] = [
     id: "HTTP",
     name: "The web quarter",
     japanese: "ウェブ街",
-    color: "#72b39a",
-    position: [20, 0, -17],
+    color: "#00e7bc",
+    position: [14, 0, -26],
     description:
       "Storefronts, side streets, and a WordPress hotel with a very welcoming front door.",
     port: 8080,
   },
   {
     id: "TELNET",
-    name: "Old town",
-    japanese: "旧市街",
-    color: "#e29582",
-    position: [-43, 0, 17],
+    name: "Circuit quarter",
+    japanese: "回路街",
+    color: "#ff7035",
+    position: [-42, 0, 18],
     description:
-      "A quiet neighborhood of old connections. Some doors have been open for decades.",
+      "The market and noodle circuit stay open after the city lights come on.",
     port: 2323,
   },
   {
     id: "MYSQL",
     name: "Archive avenue",
     japanese: "記録通り",
-    color: "#a293c8",
-    position: [42, 0, 19],
+    color: "#a675ff",
+    position: [70, 0, -26],
     description:
       "Behind the lavender facades, the city's databases wait for their next visitor.",
     port: 3306,
@@ -64,8 +64,8 @@ export const districts: District[] = [
     id: "REDIS",
     name: "Cache gardens",
     japanese: "庭園",
-    color: "#7caec7",
-    position: [1, 0, 23],
+    color: "#00cfff",
+    position: [42, 0, 52],
     description:
       "The greenhouse and roof gardens receive the city's Redis connections.",
     port: 6379,
@@ -163,6 +163,7 @@ export function initialDemoEvents(now = Date.now()): CityEvent[] {
 
 export interface CityOptions {
   theme: Theme;
+  dayPhase: number;
   paused: boolean;
   view: DataView;
   reducedMotion: boolean;

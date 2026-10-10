@@ -6,6 +6,13 @@ variable "github_repo" {
   default = "imbjdd/honeyrizons"
 }
 
+# GitHub can emit "immutable" OIDC subjects with numeric owner/repo IDs appended
+# (repo:owner@<id>/repo@<id>:...). Match both the classic and immutable forms.
+variable "github_repo_immutable" {
+  type    = string
+  default = "imbjdd@56689216/honeyrizons@1413145970"
+}
+
 resource "aws_iam_openid_connect_provider" "github" {
   url             = "https://token.actions.githubusercontent.com"
   client_id_list  = ["sts.amazonaws.com"]
@@ -22,7 +29,7 @@ resource "aws_iam_role" "github_deploy" {
       Action    = "sts:AssumeRoleWithWebIdentity"
       Condition = {
         StringEquals = { "token.actions.githubusercontent.com:aud" = "sts.amazonaws.com" }
-        StringLike   = { "token.actions.githubusercontent.com:sub" = "repo:${var.github_repo}:*" }
+        StringLike   = { "token.actions.githubusercontent.com:sub" = ["repo:${var.github_repo}:*", "repo:${var.github_repo_immutable}:*"] }
       }
     }]
   })

@@ -62,14 +62,16 @@ locals {
 }
 
 module "stack" {
-  source         = "../modules/stack"
-  environment    = "staging"
-  region         = var.region
-  profile        = var.profile
-  registry       = local.registry
-  repo_root      = local.repo_root
-  source_hash    = local.source_hash
-  attacker_count = var.attacker_count
+  source          = "../modules/stack"
+  environment     = "staging"
+  region          = var.region
+  profile         = var.profile
+  registry        = local.registry
+  repo_root       = local.repo_root
+  source_hash     = local.source_hash
+  attacker_count  = var.attacker_count
+  domain          = var.domain
+  certificate_arn = aws_acm_certificate_validation.dashboard.certificate_arn
 }
 
 output "public_ip" { value = module.stack.public_ip }

@@ -50,3 +50,15 @@ variable "instance_profile_name" {
   type        = string
   default     = "honeyrizons-ec2"
 }
+
+variable "domain" {
+  description = "Custom domain for the dashboard CloudFront (e.g. app.honeyrizons.xyz). Empty keeps the default *.cloudfront.net URL."
+  type        = string
+  default     = ""
+}
+
+variable "certificate_arn" {
+  description = "us-east-1 ACM certificate ARN covering var.domain. Required when domain is set."
+  type        = string
+  default     = ""
+}

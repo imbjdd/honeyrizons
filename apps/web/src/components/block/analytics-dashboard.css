@@ -4108,3 +4108,149 @@
     display: none;
   }
 }
+
+/* ───────── Compliance report route: preview + PDF/Excel/CSV export ───────── */
+
+.obsidian-analytics-dashboard .report-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  /* Clear breathing room from the header above and the KPI cards below. */
+  margin: 18px 0 20px;
+}
+
+.obsidian-analytics-dashboard .btn-export {
+  padding: 8px 15px;
+  border: 1px solid transparent;
+  border-radius: 9px;
+  background: var(--fill-2);
+  box-shadow: var(--ring);
+  color: var(--text);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color var(--duration-quick) ease;
+}
+
+.obsidian-analytics-dashboard .btn-export:hover {
+  background: rgba(255, 255, 255, 0.11);
+}
+
+.obsidian-analytics-dashboard .btn-export:first-child {
+  background: color-mix(in srgb, var(--accent) 16%, transparent);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) 40%, transparent);
+  color: color-mix(in srgb, var(--accent) 70%, #fff);
+}
+
+.obsidian-analytics-dashboard .btn-export:disabled {
+  opacity: 0.55;
+  cursor: default;
+}
+
+.obsidian-analytics-dashboard .report-stamp {
+  margin-left: auto;
+  color: var(--text-3);
+  font-family: var(--obsidian-analytics-dashboard-font-mono);
+  font-size: 11.5px;
+}
+
+.obsidian-analytics-dashboard .report-card {
+  margin-top: 7px;
+  padding: 15px 18px 16px;
+}
+
+.obsidian-analytics-dashboard .sev-bar {
+  display: flex;
+  gap: 2px;
+  height: 14px;
+  margin: 2px 0 12px;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.obsidian-analytics-dashboard .sev-seg {
+  min-width: 3px;
+  border-radius: 2px;
+}
+
+.obsidian-analytics-dashboard .sev-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 18px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.obsidian-analytics-dashboard .sev-legend li {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--text-2);
+  font-variant-numeric: tabular-nums;
+}
+
+.obsidian-analytics-dashboard .report-table-wrap {
+  overflow-x: auto;
+  border-radius: 12px;
+  box-shadow: var(--ring);
+}
+
+.obsidian-analytics-dashboard .report-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+
+.obsidian-analytics-dashboard .report-table th {
+  position: sticky;
+  top: 0;
+  padding: 10px 12px;
+  background: var(--fill-1);
+  color: var(--text-3);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.obsidian-analytics-dashboard .report-table td {
+  padding: 10px 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.045);
+  color: var(--text);
+  vertical-align: top;
+}
+
+.obsidian-analytics-dashboard .report-table .mono {
+  font-family: var(--obsidian-analytics-dashboard-font-mono);
+  font-size: 12px;
+}
+
+.obsidian-analytics-dashboard .report-verdict {
+  display: block;
+}
+
+.obsidian-analytics-dashboard .report-dim {
+  color: var(--text-3);
+  font-size: 12px;
+}
+
+.obsidian-analytics-dashboard td .report-dim {
+  display: block;
+  margin-top: 2px;
+}
+
+.obsidian-analytics-dashboard .report-notes {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin: 0;
+  padding-left: 18px;
+  color: var(--text-2);
+  font-size: 13px;
+  line-height: 1.5;
+}

@@ -44,7 +44,7 @@ const CityPage = lazy(() => import("@/city/CityPage"));
 
 const NAV = [
   { page: "overview", label: "Overview", Icon: HomeIcon },
-  { page: "agents", label: "AI agents", Icon: BotIcon },
+  { page: "agents", label: "Threat intelligence", Icon: BotIcon },
   { page: "city", label: "City", Icon: CityIcon },
   { page: "services", label: "Services", Icon: ServerIcon },
   { page: "sessions", label: "Sessions", Icon: TerminalIcon },

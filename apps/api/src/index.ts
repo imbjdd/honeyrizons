@@ -21,7 +21,7 @@ const LOG_PATH = resolve(process.env.LOG_PATH ?? join(import.meta.dir, "../../..
 const INTEL_PATH = resolve(process.env.INTEL_PATH ?? join(dirname(LOG_PATH), "intel.json"));
 const CHRONICLE_PATH = resolve(process.env.CHRONICLE_PATH ?? join(dirname(INTEL_PATH), "chronicle.json"));
 const PORT = Number(process.env.PORT ?? 4000);
-const MAX_EVENTS = Number(process.env.MAX_EVENTS ?? 50000);
+const MAX_EVENTS = Number(process.env.MAX_EVENTS ?? 20000);
 // Where the honeypot itself sits on the map, as "lat,lon". Defaults to Paris.
 const [HOME_LAT, HOME_LON] = (process.env.HONEYPOT_LOCATION ?? "48.8566,2.3522").split(",").map(Number);
 const SERVICES_DIR = resolve(process.env.SERVICES_DIR ?? join(import.meta.dir, "../../honeypot/config/services"));
@@ -171,7 +171,10 @@ Bun.serve({
 
     if (url.pathname === "/api/events") {
       const limit = Number(url.searchParams.get("limit") ?? 2000);
-      return Response.json(events.slice(-limit));
+      const body = JSON.stringify(events.slice(-limit));
+      // JSON events compress ~10x; CloudFront does not compress responses this large on its own.
+      if (!(req.headers.get("accept-encoding") ?? "").includes("gzip")) return new Response(body, { headers: { "Content-Type": "application/json" } });
+      return new Response(Bun.gzipSync(body), { headers: { "Content-Type": "application/json", "Content-Encoding": "gzip", Vary: "Accept-Encoding" } });
     }
 
     if (url.pathname === "/api/stream") {

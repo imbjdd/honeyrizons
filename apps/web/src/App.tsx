@@ -4,7 +4,7 @@ import { AnalyticsDashboard } from "@/components/block/analytics-dashboard";
 import { buildDashboardData } from "@/components/analytics-dashboard/data";
 import { usePageRoute } from "./route";
 
-const MAX_EVENTS = 10000;
+const MAX_EVENTS = 50000;
 
 const EMPTY_INTEL: IntelSnapshot = {
   sessions: {},

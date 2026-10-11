@@ -108,6 +108,7 @@ module "stack" {
   repo_root             = local.repo_root
   source_hash           = local.source_hash
   attacker_count        = var.attacker_count
+  city_planner          = "propose" # the operator applies the planner's suggestions on the dashboard
   instance_profile_name = aws_iam_instance_profile.ec2.name
   domain                = var.domain
   certificate_arn       = aws_acm_certificate_validation.dashboard.certificate_arn

@@ -173,6 +173,11 @@ data "aws_cloudfront_cache_policy" "disabled" {
   name = "Managed-CachingDisabled"
 }
 
+# Forwards query strings, cookies and headers (except Host, which must stay the origin's).
+data "aws_cloudfront_origin_request_policy" "all_viewer" {
+  name = "Managed-AllViewerExceptHostHeader"
+}
+
 resource "aws_cloudfront_distribution" "dashboard" {
   enabled         = true
   comment         = "Honeyrizons dashboard (${var.environment})"
@@ -196,10 +201,13 @@ resource "aws_cloudfront_distribution" "dashboard" {
   default_cache_behavior {
     target_origin_id       = "dashboard"
     viewer_protocol_policy = "redirect-to-https"
-    allowed_methods        = ["GET", "HEAD", "OPTIONS"]
-    cached_methods         = ["GET", "HEAD"]
-    cache_policy_id        = data.aws_cloudfront_cache_policy.disabled.id
-    compress               = true
+    # POST for the city planner's apply/close (propose mode).
+    allowed_methods          = ["GET", "HEAD", "OPTIONS", "PUT", "POST", "PATCH", "DELETE"]
+    cached_methods           = ["GET", "HEAD"]
+    cache_policy_id          = data.aws_cloudfront_cache_policy.disabled.id
+    # Without it CloudFront drops query strings, so /api/events?limit=… always got the API's default of 2000.
+    origin_request_policy_id = data.aws_cloudfront_origin_request_policy.all_viewer.id
+    compress                 = true
   }
 
   restrictions {
@@ -218,7 +226,7 @@ resource "aws_cloudfront_distribution" "dashboard" {
 
 # Push new images to the running instance without replacing it.
 resource "terraform_data" "deploy" {
-  triggers_replace = [var.source_hash, local.image_tag, aws_instance.honeypot.id]
+  triggers_replace = [var.source_hash, local.image_tag, aws_instance.honeypot.id, var.city_planner]
 
   provisioner "local-exec" {
     environment = merge(
@@ -226,6 +234,7 @@ resource "terraform_data" "deploy" {
         AWS_REGION        = var.region
         INSTANCE          = aws_instance.honeypot.id
         HONEYPOT_LOCATION = var.location
+        CITY_PLANNER      = var.city_planner
         REGISTRY          = var.registry
         IMAGE_TAG         = local.image_tag
         COMPOSE_B64       = filebase64("${var.repo_root}/docker-compose.yml")

@@ -39,6 +39,17 @@ variable "location" {
   default     = "53.3498,-6.2603"
 }
 
+variable "city_planner" {
+  description = "City planner mode: auto builds lures itself, propose waits for Apply on the dashboard, off keeps the surface fixed."
+  type        = string
+  default     = "auto"
+
+  validation {
+    condition     = contains(["auto", "propose", "off"], var.city_planner)
+    error_message = "city_planner must be auto, propose or off."
+  }
+}
+
 variable "attacker_count" {
   description = "Number of demo traffic-generator instances."
   type        = number

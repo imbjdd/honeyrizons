@@ -143,6 +143,7 @@ them, and `off` keeps the surface fixed. In propose mode the City planner panel 
 behind it and an **Apply** button (`POST /api/planner/apply`). Applying is held to the
 planner's own rules, demand, cooldown and capacity, so it can open nothing the automatic planner would not; only the
 pace is the operator's. Idle lures are still closed automatically.
+On AWS the mode is the stack's `city_planner` variable; staging and prod run `propose`.
 
 ### Demo
 

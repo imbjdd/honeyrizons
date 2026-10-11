@@ -226,7 +226,7 @@ resource "aws_cloudfront_distribution" "dashboard" {
 
 # Push new images to the running instance without replacing it.
 resource "terraform_data" "deploy" {
-  triggers_replace = [var.source_hash, local.image_tag, aws_instance.honeypot.id]
+  triggers_replace = [var.source_hash, local.image_tag, aws_instance.honeypot.id, var.city_planner]
 
   provisioner "local-exec" {
     environment = merge(
@@ -234,6 +234,7 @@ resource "terraform_data" "deploy" {
         AWS_REGION        = var.region
         INSTANCE          = aws_instance.honeypot.id
         HONEYPOT_LOCATION = var.location
+        CITY_PLANNER      = var.city_planner
         REGISTRY          = var.registry
         IMAGE_TAG         = local.image_tag
         COMPOSE_B64       = filebase64("${var.repo_root}/docker-compose.yml")

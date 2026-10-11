@@ -70,8 +70,8 @@ export function AgentsPage() {
     <div className="page-content">
       <header className="page-head enter" style={{ "--i": 1 } as CSSProperties}>
         <div className="page-head-text">
-          <h1 className="page-title">AI agents</h1>
-          <p className="page-sub">Sessions driven by a language model, the behavior that gave them away, and who is behind them.</p>
+          <h1 className="page-title">Threat intelligence</h1>
+          <p className="page-sub">The operators behind the AI agents that hit the honeypot, correlated across rotating IPs, and the behavior that gave each one away.</p>
         </div>
         <Segmented label="Time range" options={data.ranges} value={range} onChange={setRange} />
       </header>

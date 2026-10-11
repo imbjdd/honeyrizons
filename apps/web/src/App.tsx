@@ -5,7 +5,7 @@ import { buildDashboardData } from "@/components/analytics-dashboard/data";
 import { usePageRoute } from "./route";
 
 // The browser only needs recent events; the API keeps a larger window for triage and the chronicle.
-const MAX_EVENTS = 2000;
+const MAX_EVENTS = 15000;
 
 const EMPTY_INTEL: IntelSnapshot = {
   sessions: {},

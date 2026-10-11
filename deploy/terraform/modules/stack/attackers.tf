@@ -115,9 +115,9 @@ locals {
         printf 'PING\r\nINFO\r\nCONFIG GET *\r\n' | timeout 5 nc -w2 "$HOST" 6379 >/dev/null 2>&1 || true
         printf 'root\r\nls\r\nuname -a\r\ncat /etc/passwd\r\nexit\r\n' | timeout 5 nc -w2 "$HOST" 23 >/dev/null 2>&1 || true
         printf '\x00' | timeout 5 nc -w2 "$HOST" 3306 >/dev/null 2>&1 || true
-        # ~2-5 min between rounds: about 12k events a day from two VMs, so the
-        # dashboard window (50k events) spans days of real traffic, not hours.
-        sleep $((120 + RANDOM % 180))
+        # 10-20 min between rounds: a few thousand events a day across the five
+        # generators, so the API's 20k-event window spans days, not hours.
+        sleep $((600 + RANDOM % 600))
       done
       SH
       chmod +x /usr/local/bin/probe.sh
